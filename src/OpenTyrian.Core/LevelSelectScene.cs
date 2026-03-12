@@ -71,7 +71,7 @@ public sealed class LevelSelectScene : IScene
             MainLevelEntry selectedEntry = _sessionState.MainLevelEntries[_selectedIndex];
             _sessionState.SetCurrentMainLevel(selectedEntry.MainLevelNumber);
             _previousInput = input;
-            return new FullGameMenuScene(_sessionState);
+            return new GameplayScene(_sessionState);
         }
 
         _previousInput = input;
@@ -138,7 +138,7 @@ public sealed class LevelSelectScene : IScene
             12,
             0,
             shadow: true);
-        resources.FontRenderer.DrawDark(surface, 160, 204, "Up/Down or mouse choose  Enter/click go  Esc back", FontKind.Tiny, FontAlignment.Center, black: false);
+        resources.FontRenderer.DrawDark(surface, 160, 204, "Up/Down or mouse choose  Enter/click launch  Esc back", FontKind.Tiny, FontAlignment.Center, black: false);
     }
 
     private static int? HitTestRow(int x, int y, int selectedIndex, int totalRows)

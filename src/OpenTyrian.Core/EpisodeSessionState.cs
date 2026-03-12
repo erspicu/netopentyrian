@@ -238,6 +238,16 @@ public sealed class EpisodeSessionState
         return true;
     }
 
+    public void AddCash(int amount)
+    {
+        if (amount <= 0)
+        {
+            return;
+        }
+
+        Cash += amount;
+    }
+
     public int GetTotalAssetValue(ItemCatalog? itemCatalog)
     {
         return PlayerLoadout.GetTotalValue(itemCatalog);

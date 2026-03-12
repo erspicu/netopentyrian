@@ -201,7 +201,7 @@ public sealed class FullGameMenuScene : IScene
                 {
                     Id = "next_level",
                     Label = labels.Count > 5 ? labels[5] : "Next Level",
-                    Description = string.Format("Choose from {0} parsed main-level sections.", sessionState.MainLevelEntries.Count),
+                    Description = string.Format("Choose and launch from {0} parsed main-level sections.", sessionState.MainLevelEntries.Count),
                     IsEnabled = sessionState.MainLevelEntries.Count > 0,
                 },
                 new MenuItemDefinition
