@@ -129,6 +129,7 @@ public sealed class FullGameMenuScene : IScene
         return _menuState.SelectedItem.Id switch
         {
             "data_cubes" => new DataCubeScene(_sessionState, returnToFullGameMenu: true),
+            "ship_specs" => new ShipSpecsScene(_sessionState),
             "upgrade_ship" => new UpgradeMenuScene(_sessionState, returnToFullGameMenu: true),
             "next_level" => new LevelSelectScene(_sessionState),
             "session_state" => new EpisodeSessionScene(_sessionState, returnToFullGameMenu: true),
@@ -170,8 +171,7 @@ public sealed class FullGameMenuScene : IScene
                 {
                     Id = "ship_specs",
                     Label = labels.Count > 2 ? labels[2] : "Ship Specs",
-                    Description = "Ship specs screen is not wired yet.",
-                    IsEnabled = false,
+                    Description = string.Format("Inspect {0} and current equipped systems.", ItemNameResolver.GetCompactItemName(ItemCategoryKind.Ship, sessionState.PlayerLoadout.GetEquippedItemId(ItemCategoryKind.Ship), null)),
                 },
                 new MenuItemDefinition
                 {

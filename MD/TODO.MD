@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
-總完成度(估算): 約 55%
+總完成度(估算): 約 57%
 
 ## 目標
 
@@ -468,3 +468,7 @@
 - 已新增 `LevelSelectScene`，可瀏覽目前 episode 解析出的 `main level` section 清單，選定後會切換 `CurrentLevelNumber` 並在返回 hub 時自動執行新 section command
 - 已新增 `EpisodePendingCommandRunner`，把 section auto-execute 從 debug scene 抽成可共用流程，讓 full-game hub 與 session debug 共用同一套 command handoff 邏輯
 - `TyrianHelpTextLoader` / `GameplayTextLoader` 已開始額外讀取 `tyrian.hdt` 的 `menuInt[1]`，full-game hub 會優先使用真實遊戲 full-game menu 文字
+- `FullGameMenuScene` 的 `Ship Specs` 已從停用改成可用，現在會進入 `ShipSpecsScene`
+- 已新增 `ShipSpecsScene`，目前會顯示目前裝備 ship 的名稱、ship info 兩段文字、ship illustration，以及 ship / shield / generator / weapon / sidekick 摘要
+- `TyrianHelpTextLoader` / `GameplayTextLoader` 已開始額外讀取 `tyrian.hdt` 後半段的 `shipInfo` 區段，避免 ship specs 完全硬編碼
+- `ItemCatalogLoader` / `ItemCatalogEntry` 已擴充基礎 stat metadata，ship 會帶 speed/armor/big ship graphic，shield / generator / weapon 也開始保留可供 UI 顯示的數值欄位

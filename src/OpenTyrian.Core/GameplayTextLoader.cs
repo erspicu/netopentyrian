@@ -35,6 +35,7 @@ public static class GameplayTextLoader
                     "Next Level",
                     "Quit",
                 ],
+                ShipInfo = BuildDefaultShipInfo(),
             };
         }
 
@@ -46,6 +47,22 @@ public static class GameplayTextLoader
             GameplayNames = catalog.GameplayNames,
             MainMenuHelp = catalog.MainMenuHelp,
             FullGameMenu = catalog.FullGameMenu,
+            ShipInfo = catalog.ShipInfo,
         };
+    }
+
+    private static IList<ShipDescriptionEntry> BuildDefaultShipInfo()
+    {
+        List<ShipDescriptionEntry> entries = new(13);
+        for (int i = 0; i < 13; i++)
+        {
+            entries.Add(new ShipDescriptionEntry
+            {
+                Summary = string.Format("Ship profile {0}", i + 1),
+                Detail = "Detailed ship background text has not been decoded from tyrian.hdt yet.",
+            });
+        }
+
+        return entries;
     }
 }

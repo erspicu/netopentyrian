@@ -46,7 +46,22 @@ public static class TyrianHelpTextLoader
         SkipSection(data, 7); // difficulty_name
         List<string> gameplayNames = ReadSection(data, 5);
 
-        return new TyrianHelpTextCatalog(mainMenuHelp, gameplayNames, episodeNames, fullGameMenu);
+        SkipSection(data, 6);  // menuInt[10]
+        SkipSection(data, 3);  // inputDevices
+        SkipSection(data, 4);  // networkText
+        SkipSection(data, 4);  // menuInt[11]
+        SkipSection(data, 11); // difficultyNameB
+        SkipSection(data, 6);  // menuInt[12]
+        SkipSection(data, 7);  // menuInt[13]
+        SkipSection(data, 5);  // joyButtonNames
+        SkipSection(data, 11); // superShips
+        SkipSection(data, 9);  // specialName
+        SkipSection(data, 25); // destructHelp
+        SkipSection(data, 17); // weaponNames
+        SkipSection(data, 5);  // destructModeName
+        List<ShipDescriptionEntry> shipInfo = ReadShipInfoSection(data, 13);
+
+        return new TyrianHelpTextCatalog(mainMenuHelp, gameplayNames, episodeNames, fullGameMenu, shipInfo);
     }
 
     private static void SkipSection(TyrianDataStream data, int count)
@@ -68,6 +83,24 @@ public static class TyrianHelpTextLoader
         for (int i = 0; i < count; i++)
         {
             values.Add(ReadEncryptedPascalString(data));
+        }
+
+        ReadEncryptedPascalString(data); // trailing section label/footer
+        return values;
+    }
+
+    private static List<ShipDescriptionEntry> ReadShipInfoSection(TyrianDataStream data, int count)
+    {
+        ReadEncryptedPascalString(data); // leading section label/header
+
+        List<ShipDescriptionEntry> values = new(count);
+        for (int i = 0; i < count; i++)
+        {
+            values.Add(new ShipDescriptionEntry
+            {
+                Summary = ReadEncryptedPascalString(data),
+                Detail = ReadEncryptedPascalString(data),
+            });
         }
 
         ReadEncryptedPascalString(data); // trailing section label/footer
