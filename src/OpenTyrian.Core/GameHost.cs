@@ -6,6 +6,7 @@ public sealed class GameHost
 {
     private readonly IAssetLocator _assetLocator;
     private readonly IInputSource _inputSource;
+    private readonly IAudioDevice _audioDevice;
     private IScene _scene;
     private double _timeSeconds;
     private PaletteBank? _paletteBank;
@@ -19,10 +20,11 @@ public sealed class GameHost
     private GameplayTextInfo? _gameplayText;
     private ItemCatalog? _itemCatalog;
 
-    public GameHost(IAssetLocator assetLocator, IInputSource inputSource)
+    public GameHost(IAssetLocator assetLocator, IInputSource inputSource, IAudioDevice audioDevice)
     {
         _assetLocator = assetLocator;
         _inputSource = inputSource;
+        _audioDevice = audioDevice;
         _scene = new TitleScene();
         IndexedFrameBuffer = new IndexedFrameBuffer(320, 200);
         FrameBuffer = new ArgbFrameBuffer(320, 200);
@@ -34,6 +36,7 @@ public sealed class GameHost
         LoadEpisodes();
         LoadGameplayText();
         LoadItemCatalog();
+        InitializeAudio();
     }
 
     public IndexedFrameBuffer IndexedFrameBuffer { get; }
@@ -245,6 +248,24 @@ public sealed class GameHost
         catch
         {
             _itemCatalog = null;
+        }
+    }
+
+    public void Shutdown()
+    {
+        _audioDevice.Shutdown();
+    }
+
+    private void InitializeAudio()
+    {
+        try
+        {
+            _audioDevice.Initialize(44100, 2);
+            StatusText = string.Format("{0} | audio:{1}", StatusText, _audioDevice.BackendName);
+        }
+        catch (Exception ex)
+        {
+            StatusText = string.Format("{0} | audio init failed: {1}", StatusText, ex.Message);
         }
     }
 }

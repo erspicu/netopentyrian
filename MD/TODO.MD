@@ -1,8 +1,8 @@
 # OpenTyrian C#/.NET Framework 4.0 移植 TODO
 
 最後更新: 2026-03-12
-目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
-總完成度(估算): 約 59%
+目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
+總完成度(估算): 約 60%
 
 ## 目標
 
@@ -234,7 +234,7 @@
 - 可播放選單音效
 - 可穩定輸出 PCM，不爆音、不頻繁卡死
 
-狀態: 未開始
+狀態: 進行中
 
 ### 第 7 階段: 主選單垂直切片
 
@@ -476,3 +476,5 @@
 - 已新增 `OptionsScene`，目前會用 `tyrian.hdt` 的 `menuInt[3]` 文字生成最小 options menu，並明確標示 load/save、joystick、keyboard config 尚未實作
 - 已新增 `QuitConfirmationScene`，`Quit` 現在會先做確認，再返回 episode select，開始貼近上游 `JE_quitRequest()` 的互動語意
 - `TyrianHelpTextLoader` / `GameplayTextLoader` 已額外讀取 `tyrian.hdt` 的 options menu 文字，供 `OptionsScene` 使用
+- 已新增 `IAudioDevice` 平台介面，`GameHost` 建構流程與 shutdown path 都已開始透過平台抽象處理音效裝置
+- WinForms 端已新增 `SilentAudioDevice`，目前先提供 `.NET Framework 4.0` 下不依賴額外套件的 audio lifecycle 骨架，為後續 waveOut backend 鋪底

@@ -86,6 +86,7 @@ public sealed class MainForm : Form
     {
         _frameTimer.Stop();
         _frameTimer.Dispose();
+        _gameHost.Shutdown();
         _videoDevice.Dispose();
     }
 
