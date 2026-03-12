@@ -27,6 +27,56 @@ public static class BackgroundMusicSynthesizer
         }
     }
 
+    public static AudioCueSample CreateJukeboxTrack(int trackIndex, int sampleRate, int channelCount)
+    {
+        int normalizedIndex = trackIndex < 0 ? 0 : trackIndex;
+        int scaleSeed = normalizedIndex % 5;
+        int rootNote = 48 + ((normalizedIndex * 3) % 19);
+        int bpm = 84 + ((normalizedIndex * 7) % 56);
+        double leadAmplitude = 0.050 + ((normalizedIndex % 4) * 0.006);
+        double bassAmplitude = 0.040 + (((normalizedIndex + 2) % 4) * 0.005);
+
+        int[] leadPattern;
+        switch (scaleSeed)
+        {
+            case 0:
+                leadPattern = new[] { 0, 4, 7, 11, 7, 4, 12, 7, 5, 9, 12, 9, 7, 4, 11, 7 };
+                break;
+            case 1:
+                leadPattern = new[] { 0, 3, 7, 10, 7, 3, 12, 7, 2, 5, 9, 12, 9, 5, 10, 7 };
+                break;
+            case 2:
+                leadPattern = new[] { 0, 5, 9, 12, 9, 5, 14, 9, 4, 7, 11, 14, 11, 7, 12, 9 };
+                break;
+            case 3:
+                leadPattern = new[] { 0, 2, 7, 9, 7, 2, 12, 9, 4, 7, 11, 9, 7, 2, 11, 7 };
+                break;
+            default:
+                leadPattern = new[] { 0, 4, 8, 11, 8, 4, 13, 8, 1, 4, 8, 11, 8, 4, 9, 6 };
+                break;
+        }
+
+        int[] leadNotes = new int[leadPattern.Length];
+        for (int i = 0; i < leadPattern.Length; i++)
+        {
+            leadNotes[i] = rootNote + leadPattern[i];
+        }
+
+        int[] bassNotes =
+        {
+            rootNote - 12,
+            rootNote - 12,
+            rootNote - 5,
+            rootNote - 5,
+            rootNote - 10,
+            rootNote - 10,
+            rootNote - 7,
+            rootNote - 7,
+        };
+
+        return CreateLoop(sampleRate, channelCount, bpm, leadNotes, bassNotes, leadAmplitude, bassAmplitude);
+    }
+
     private static AudioCueSample CreateLoop(int sampleRate, int channelCount, int bpm, int[] leadNotes, int[] bassNotes, double leadAmplitude, double bassAmplitude)
     {
         int beatFrames = Math.Max(1, (sampleRate * 60) / bpm);

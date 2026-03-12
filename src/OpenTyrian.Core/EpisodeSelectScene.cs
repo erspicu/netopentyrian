@@ -4,8 +4,8 @@ public sealed class EpisodeSelectScene : IScene, IScenePresentation
 {
     private readonly GameStartMode _startMode;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
-    private MenuState? _menuState;
     private IList<EpisodeInfo> _episodes = new EpisodeInfo[0];
+    private int _selectedIndex;
 
     public EpisodeSelectScene(GameStartMode startMode = GameStartMode.FullGame)
     {
@@ -24,9 +24,8 @@ public sealed class EpisodeSelectScene : IScene, IScenePresentation
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
     {
-        MenuDefinition definition = CreateMenuDefinition(resources.Episodes, _startMode);
-        EnsureMenuState(resources, definition);
-        if (_menuState is null)
+        EnsureEpisodes(resources);
+        if (_episodes.Count == 0)
         {
             _previousInput = input;
             return null;
@@ -38,18 +37,16 @@ public sealed class EpisodeSelectScene : IScene, IScenePresentation
         bool downPressed = input.Down && !_previousInput.Down;
         bool pointerConfirmPressed = input.PointerConfirm && !_previousInput.PointerConfirm;
 
-        int? hoveredIndex = input.PointerPresent
-            ? TitleScreenRenderer.HitTestMenuItem(definition, input.PointerX, input.PointerY)
-            : null;
+        int? hoveredIndex = input.PointerPresent ? HitTestRow(resources.FontRenderer, input.PointerX, input.PointerY) : null;
 
         if (hoveredIndex is int pointerIndex)
         {
-            if (_menuState.SelectedIndex != pointerIndex)
+            if (_selectedIndex != pointerIndex)
             {
                 SceneAudio.PlayCursor(resources);
             }
 
-            _menuState.SetSelectedIndex(pointerIndex);
+            _selectedIndex = pointerIndex;
         }
 
         if (cancelPressed)
@@ -62,24 +59,26 @@ public sealed class EpisodeSelectScene : IScene, IScenePresentation
         if (upPressed)
         {
             SceneAudio.PlayCursor(resources);
-            _menuState.MovePrevious();
+            _selectedIndex = _selectedIndex == 0 ? _episodes.Count - 1 : _selectedIndex - 1;
         }
 
         if (downPressed)
         {
             SceneAudio.PlayCursor(resources);
-            _menuState.MoveNext();
+            _selectedIndex = (_selectedIndex + 1) % _episodes.Count;
         }
 
-        if ((confirmPressed || (pointerConfirmPressed && hoveredIndex is not null)) && _menuState.SelectedItem.IsEnabled)
+        if (confirmPressed || (pointerConfirmPressed && hoveredIndex.HasValue))
         {
-            SceneAudio.PlayConfirm(resources);
-            _previousInput = input;
             EpisodeInfo? selectedEpisode = GetSelectedEpisode();
-            if (selectedEpisode is not null)
+            if (selectedEpisode is not null && selectedEpisode.IsAvailable)
             {
+                SceneAudio.PlayConfirm(resources);
+                _previousInput = input;
                 return new DifficultySelectScene(selectedEpisode, _startMode);
             }
+
+            SceneAudio.PlayCancel(resources);
         }
 
         _previousInput = input;
@@ -88,68 +87,61 @@ public sealed class EpisodeSelectScene : IScene, IScenePresentation
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        MenuDefinition definition = CreateMenuDefinition(resources.Episodes, _startMode);
-        EnsureMenuState(resources, definition);
+        EnsureEpisodes(resources);
         TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
-        if (_menuState is not null)
+        if (resources.FontRenderer is null)
         {
-            TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);
+            return;
+        }
+
+        resources.FontRenderer.DrawShadowText(surface, 160, 20, "Select Episode", FontKind.Normal, FontAlignment.Center, 15, -3, black: false, shadowDistance: 2);
+        for (int i = 0; i < _episodes.Count; i++)
+        {
+            EpisodeInfo episode = _episodes[i];
+            int value = -4 + (i == _selectedIndex ? 2 : 0) + (episode.IsAvailable ? 0 : -4);
+            resources.FontRenderer.DrawShadowText(
+                surface,
+                20,
+                50 + (i * 30),
+                episode.Label,
+                FontKind.Small,
+                FontAlignment.Left,
+                15,
+                value,
+                black: false,
+                shadowDistance: 2);
         }
     }
 
-    private void EnsureMenuState(SceneResources resources, MenuDefinition definition)
+    private void EnsureEpisodes(SceneResources resources)
     {
-        if (_menuState is not null)
+        if (_episodes.Count > 0)
         {
             return;
         }
 
         _episodes = resources.Episodes.Skip(1).ToArray();
-        _menuState = new MenuState(definition);
+        _selectedIndex = 0;
     }
 
     private EpisodeInfo? GetSelectedEpisode()
     {
-        if (_menuState is null)
-        {
-            return null;
-        }
-
-        int index = _menuState.SelectedIndex;
-        return index >= 0 && index < _episodes.Count ? _episodes[index] : null;
+        return _selectedIndex >= 0 && _selectedIndex < _episodes.Count ? _episodes[_selectedIndex] : null;
     }
 
-    private static MenuDefinition CreateMenuDefinition(IList<EpisodeInfo> episodes, GameStartMode startMode)
+    private int? HitTestRow(TyrianFontRenderer? fontRenderer, int x, int y)
     {
-        List<MenuItemDefinition> items = new(episodes.Count);
-        string title = "Select Episode";
-
-        if (episodes.Count > 0 && !string.IsNullOrWhiteSpace(episodes[0].Label))
+        for (int i = 0; i < _episodes.Count; i++)
         {
-            title = episodes[0].Label;
-        }
-
-        if (startMode != GameStartMode.FullGame)
-        {
-            title = string.Format("{0} ({1})", title, startMode.GetDisplayName());
-        }
-
-        foreach (EpisodeInfo episode in episodes.Skip(1))
-        {
-            items.Add(new MenuItemDefinition
+            int textWidth = fontRenderer is not null ? fontRenderer.MeasureText(_episodes[i].Label, FontKind.Small) : 200;
+            int top = 50 + (i * 30);
+            int bottom = top + 13;
+            if (x >= 20 && x < 20 + textWidth && y >= top && y < bottom)
             {
-                Id = $"episode_{episode.EpisodeNumber}",
-                Label = episode.Label,
-                Description = episode.Description,
-                IsEnabled = episode.IsAvailable,
-            });
+                return i;
+            }
         }
 
-        return new MenuDefinition
-        {
-            Title = title,
-            Footer = string.Format("Mode: {0}  Esc returns  Mouse hover/click enabled", startMode.GetDisplayName()),
-            Items = items,
-        };
+        return null;
     }
 }

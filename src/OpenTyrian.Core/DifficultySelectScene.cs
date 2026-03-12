@@ -7,9 +7,6 @@ public sealed class DifficultySelectScene : IScene, IScenePresentation
         "Easy",
         "Normal",
         "Hard",
-        "Impossible",
-        "Suicide",
-        "Zinglon",
     };
 
     private readonly EpisodeInfo _episode;
@@ -97,14 +94,17 @@ public sealed class DifficultySelectScene : IScene, IScenePresentation
         {
             int y = 54 + (i * 24);
             bool selected = i == _selectedIndex;
-            if (selected)
-            {
-                resources.FontRenderer.DrawBlendText(surface, 160, y, DifficultyNames[i], FontKind.Normal, FontAlignment.Center, 15, -1);
-            }
-            else
-            {
-                resources.FontRenderer.DrawText(surface, 160, y, DifficultyNames[i], FontKind.Normal, FontAlignment.Center, 15, -4, shadow: true);
-            }
+            resources.FontRenderer.DrawShadowText(
+                surface,
+                160,
+                y,
+                DifficultyNames[i],
+                FontKind.Small,
+                FontAlignment.Center,
+                15,
+                -4 + (selected ? 2 : 0),
+                black: false,
+                shadowDistance: 2);
         }
 
         resources.FontRenderer.DrawDark(surface, 160, 190, _episode.Label, FontKind.Tiny, FontAlignment.Center, black: false);
@@ -112,13 +112,13 @@ public sealed class DifficultySelectScene : IScene, IScenePresentation
 
     private static int? HitTestRow(int x, int y)
     {
-        if (x < 78 || x > 242)
-        {
-            return null;
-        }
-
         for (int i = 0; i < DifficultyNames.Length; i++)
         {
+            if (x < 80 || x > 240)
+            {
+                return null;
+            }
+
             int top = 48 + (i * 24);
             int bottom = top + 14;
             if (y >= top && y <= bottom)

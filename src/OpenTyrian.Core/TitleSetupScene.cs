@@ -78,21 +78,22 @@ public sealed class TitleSetupScene : IScene, IScenePresentation
             return;
         }
 
-        resources.FontRenderer.DrawShadowText(surface, 160, 20, "Setup", FontKind.Normal, FontAlignment.Center, 15, 0, black: false, shadowDistance: 1);
-        resources.FontRenderer.DrawText(surface, 160, 190, "Title-level setup branch", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawShadowText(surface, 160, 20, "Setup", FontKind.Normal, FontAlignment.Center, 15, -3, black: false, shadowDistance: 2);
 
         for (int i = 0; i < Items.Length; i++)
         {
             int y = 60 + (i * 24);
             if (i == _selectedIndex)
             {
-                resources.FontRenderer.DrawBlendText(surface, 160, y, Items[i], FontKind.Normal, FontAlignment.Center, 15, -1);
+                resources.FontRenderer.DrawBlendText(surface, 160, y, Items[i], FontKind.Small, FontAlignment.Center, 15, 1);
             }
             else
             {
-                resources.FontRenderer.DrawText(surface, 160, y, Items[i], FontKind.Normal, FontAlignment.Center, 15, -4, shadow: true);
+                resources.FontRenderer.DrawText(surface, 160, y, Items[i], FontKind.Small, FontAlignment.Center, 15, -3, shadow: true);
             }
         }
+
+        resources.FontRenderer.DrawDark(surface, 160, 190, "Esc returns to title", FontKind.Tiny, FontAlignment.Center, black: false);
     }
 
     private static int? HitTestRow(int x, int y)

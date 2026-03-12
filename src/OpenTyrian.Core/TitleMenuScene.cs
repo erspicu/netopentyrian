@@ -100,7 +100,7 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
             MenuCenterX,
             MenuStartY + (_selectedIndex * MenuRowHeight),
             DefaultItems[_selectedIndex],
-            FontKind.Normal,
+            FontKind.Small,
             FontAlignment.Center,
             15,
             -1,
@@ -157,7 +157,7 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
     {
         for (int i = 0; i < DefaultItems.Length; i++)
         {
-            int textWidth = fontRenderer is not null ? fontRenderer.MeasureText(DefaultItems[i], FontKind.Normal) : 160;
+            int textWidth = fontRenderer is not null ? fontRenderer.MeasureText(DefaultItems[i], FontKind.Small) : 160;
             int left = MenuCenterX - (textWidth / 2);
             int right = left + textWidth;
             int top = MenuStartY + (i * MenuRowHeight);
@@ -178,10 +178,10 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
 
     private static void DrawMenuText(IndexedFrameBuffer surface, TyrianFontRenderer fontRenderer, int x, int y, string text, int value)
     {
-        fontRenderer.DrawText(surface, x - 1, y - 1, text, FontKind.Normal, FontAlignment.Center, 15, -10, shadow: false);
-        fontRenderer.DrawText(surface, x + 1, y + 1, text, FontKind.Normal, FontAlignment.Center, 15, -10, shadow: false);
-        fontRenderer.DrawText(surface, x + 1, y - 1, text, FontKind.Normal, FontAlignment.Center, 15, -10, shadow: false);
-        fontRenderer.DrawText(surface, x - 1, y + 1, text, FontKind.Normal, FontAlignment.Center, 15, -10, shadow: false);
-        fontRenderer.DrawText(surface, x, y, text, FontKind.Normal, FontAlignment.Center, 15, value, shadow: false);
+        fontRenderer.DrawText(surface, x - 1, y - 1, text, FontKind.Small, FontAlignment.Center, 15, -10, shadow: false);
+        fontRenderer.DrawText(surface, x + 1, y + 1, text, FontKind.Small, FontAlignment.Center, 15, -10, shadow: false);
+        fontRenderer.DrawText(surface, x + 1, y - 1, text, FontKind.Small, FontAlignment.Center, 15, -10, shadow: false);
+        fontRenderer.DrawText(surface, x - 1, y + 1, text, FontKind.Small, FontAlignment.Center, 15, -10, shadow: false);
+        fontRenderer.DrawText(surface, x, y, text, FontKind.Small, FontAlignment.Center, 15, value, shadow: false);
     }
 }

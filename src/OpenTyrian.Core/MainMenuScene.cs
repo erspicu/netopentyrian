@@ -118,7 +118,7 @@ public sealed class MainMenuScene : IScene, IScenePresentation
                 HeaderCenterX,
                 ItemStartY + (i * ItemRowHeight),
                 Items[i],
-                FontKind.Normal,
+                FontKind.Small,
                 FontAlignment.Center,
                 15,
                 value,
@@ -146,7 +146,7 @@ public sealed class MainMenuScene : IScene, IScenePresentation
     {
         for (int i = 0; i < Items.Length; i++)
         {
-            int textWidth = fontRenderer is not null ? fontRenderer.MeasureText(Items[i], FontKind.Normal) : 180;
+            int textWidth = fontRenderer is not null ? fontRenderer.MeasureText(Items[i], FontKind.Small) : 180;
             int left = HeaderCenterX - (textWidth / 2);
             int right = left + textWidth;
             int top = ItemStartY + (i * ItemRowHeight);

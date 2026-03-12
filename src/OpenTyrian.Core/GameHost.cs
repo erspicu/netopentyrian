@@ -31,6 +31,8 @@ public sealed class GameHost : IAudioCueSink
     private ItemCatalog? _itemCatalog;
     private SaveSlotCatalog? _saveSlots;
     private SceneMusicKind _currentMusicKind;
+    private string? _currentCustomMusicKey;
+    private AudioCueSample? _currentCustomMusicTrack;
 
     public GameHost(IAssetLocator assetLocator, IInputSource inputSource, IAudioDevice audioDevice, IUserFileStore userFileStore)
     {
@@ -420,6 +422,8 @@ public sealed class GameHost : IAudioCueSink
         _musicTracks[SceneMusicKind.Gameplay] = BackgroundMusicSynthesizer.Create(SceneMusicKind.Gameplay, _audioDevice.SampleRate, _audioDevice.ChannelCount);
         _musicTracks[SceneMusicKind.Shop] = BackgroundMusicSynthesizer.Create(SceneMusicKind.Shop, _audioDevice.SampleRate, _audioDevice.ChannelCount);
         _currentMusicKind = SceneMusicKind.Silence;
+        _currentCustomMusicKey = null;
+        _currentCustomMusicTrack = null;
         _musicFrameCursor = 0;
         _bufferedAudioSeconds = 0.0;
     }
@@ -437,12 +441,29 @@ public sealed class GameHost : IAudioCueSink
             _bufferedAudioSeconds = 0.0;
         }
 
-        SceneMusicKind targetMusic = ResolveSceneMusicKind(_scene);
-        if (targetMusic != _currentMusicKind)
+        ICustomMusicScene? customMusicScene = _scene as ICustomMusicScene;
+        if (customMusicScene is not null)
         {
-            _currentMusicKind = targetMusic;
-            _musicFrameCursor = 0;
-            _bufferedAudioSeconds = 0.0;
+            if (!string.Equals(_currentCustomMusicKey, customMusicScene.MusicCacheKey, StringComparison.Ordinal))
+            {
+                _currentCustomMusicKey = customMusicScene.MusicCacheKey;
+                _currentCustomMusicTrack = customMusicScene.CreateMusicTrack(_audioDevice.SampleRate, _audioDevice.ChannelCount);
+                _musicFrameCursor = 0;
+                _bufferedAudioSeconds = 0.0;
+            }
+        }
+        else
+        {
+            _currentCustomMusicKey = null;
+            _currentCustomMusicTrack = null;
+
+            SceneMusicKind targetMusic = ResolveSceneMusicKind(_scene);
+            if (targetMusic != _currentMusicKind)
+            {
+                _currentMusicKind = targetMusic;
+                _musicFrameCursor = 0;
+                _bufferedAudioSeconds = 0.0;
+            }
         }
 
         double chunkSeconds = (double)AudioChunkFrames / _audioDevice.SampleRate;
@@ -485,11 +506,18 @@ public sealed class GameHost : IAudioCueSink
 
     private void MixMusicTrack(int[] mixed, int frameCount, int channelCount)
     {
-        AudioCueSample? musicTrack;
-        if (_currentMusicKind == SceneMusicKind.Silence ||
-            !_musicTracks.TryGetValue(_currentMusicKind, out musicTrack) ||
-            musicTrack is null ||
-            musicTrack.FrameCount <= 0)
+        AudioCueSample? musicTrack = _currentCustomMusicTrack;
+        if (musicTrack is null)
+        {
+            if (_currentMusicKind == SceneMusicKind.Silence ||
+                !_musicTracks.TryGetValue(_currentMusicKind, out musicTrack) ||
+                musicTrack is null)
+            {
+                return;
+            }
+        }
+
+        if (musicTrack.FrameCount <= 0)
         {
             return;
         }
