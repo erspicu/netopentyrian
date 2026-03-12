@@ -14,7 +14,7 @@ public sealed class SceneResources
 
     public TyrianFontRenderer? FontRenderer { get; init; }
 
-    public required IReadOnlyList<EpisodeInfo> Episodes { get; init; }
+    public required IList<EpisodeInfo> Episodes { get; init; }
 
     public GameplayTextInfo? GameplayText { get; init; }
 

@@ -1,19 +1,21 @@
-# OpenTyrian C#/.NET 10 移植 TODO
+# OpenTyrian C#/.NET Framework 4.0 移植 TODO
 
 最後更新: 2026-03-12
-目前狀態: 第 0、1 階段完成，第 3、4 階段進行中
+目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
 
 ## 目標
 
-將 `opentyrian-master` 移植為 `C# + .NET 10 + Windows Forms` 版本，並符合以下限制:
+將 `opentyrian-master` 移植為 `C# + .NET Framework 4.0 + Windows Forms` 版本，並符合以下限制:
 
 - 不使用第三方 library
+- 不額外依賴 `System.Memory`、`System.Buffers` 等外掛套件
 - 視窗以 WinForms 建立
 - 畫面輸出以 `Panel + Win32 GDI` 為主
 - 鍵盤、滑鼠、手把、音效直接使用 .NET 內建功能或 Win32 API
 - 將平台層與遊戲邏輯核心切開，方便日後移植其他平台
 - 執行時使用 `tyrian21` 作為遊戲資料目錄
 - 可參考或重用 `tool` 目錄內現有 Win32 / GDI / 輸入 / 音效工具程式
+- 不再規劃網路功能，`network.c` 對應流程維持停用
 
 ## 目前目錄
 
@@ -69,7 +71,7 @@
 
 正確做法:
 
-1. 先建立 .NET 解決方案與平台抽象
+1. 先建立 .NET Framework 解決方案與平台抽象
 2. 先打通畫面輸出骨架
 3. 再處理資料載入
 4. 再移植 palette / sprite / font / background
@@ -82,14 +84,14 @@
 
 目標:
 
-- 建立 `.NET 10` WinForms solution
+- 建立 `.NET Framework 4.0` WinForms solution
 - 建立 `Core / Platform / WinForms` 分層
 - 建立最小可執行主程式
 
 工作項目:
 
 - 建 solution 與 csproj
-- 設定 `net10.0-windows`
+- 設定 `net40`
 - 設定 unsafe / AllowUnsafeBlocks
 - 建立基本命名空間與資料夾
 - 導入 `tool` 內可重用程式
@@ -210,7 +212,7 @@
 - 滑鼠可操作選單
 - 手把可映射方向與按鈕
 
-狀態: 未開始
+狀態: 進行中
 
 ### 第 6 階段: 音效平台層
 
@@ -254,7 +256,7 @@
 - 可操作選單
 - 可正常退出
 
-狀態: 未開始
+狀態: 進行中
 
 ### 第 8 階段: 實際遊戲邏輯
 
@@ -292,7 +294,7 @@
 - 移植 `lds_play.c`
 - 移植 `nortsong.c`
 - 視需要處理 `jukebox`
-- 後期再評估 `network.c`
+- `network.c` 不納入範圍
 
 驗收標準:
 
@@ -325,7 +327,7 @@
 
 目前先做以下 3 件事:
 
-1. 建立 `.NET 10` solution 與專案分層
+1. 建立 `.NET Framework 4.0` solution 與專案分層
 2. 建立 WinForms + Panel + GDI 畫面輸出骨架
 3. 建立資料目錄定位，確認可讀 `tyrian21`
 
@@ -362,7 +364,7 @@
 - 已建立最小 `GameHost` 與 `IAssetLocator` 骨架
 - 已建立 WinForms `MainForm` 與遊戲 Panel
 - 已建立 `tyrian21` 資料目錄定位，會檢查 `palette.dat`
-- 已將專案統一為 `net10.0-windows`
+- 已將專案統一為 `net40`
 - 已開啟 `AllowUnsafeBlocks`，供後續導入 GDI / 指標工具碼
 - 已確認可使用 Visual Studio `MSBuild.exe` 成功編譯 solution
 - 已新增 `build.ps1`，作為目前建置入口
@@ -403,7 +405,7 @@
 - `TitleScene` 目前已可用 `Enter` 進入 prototype menu、方向鍵切換選項、`Escape` 返回 title，作為後續主選單輸入骨架
 - 已將 prototype menu 抽成 `MenuDefinition` / `MenuItemDefinition` / `MenuState`，scene 不再硬編碼選單控制流與說明文字
 - 已將 `TitleScene` 與 `MainMenuScene` 分離，scene 切換改由 `Update()` 回傳下一個 scene，`GameHost` 不再管理 title/menu 內部狀態
-- `MainMenuScene` 的選項與順序已開始對齊上游 `menus.c` 的 `gameplaySelect()`，目前使用 1P Full Game / 1P Arcade / 2P Arcade / Network disabled
+- `MainMenuScene` 的選項與順序已開始對齊上游 `menus.c` 的 `gameplaySelect()`，目前使用 1P Full Game / 1P Arcade / 2P Arcade / Network disabled（維持停用）
 - 已新增 `EpisodeSelectScene` 骨架，`1 Player Full Game` 現在會由主選單實際切進 episode 選擇流程
 - 已新增 `EpisodeCatalogLoader`，目前會依 `tyrian1.lvl` 到 `tyrian4.lvl` 的實際存在狀態建立 episode 清單，對齊上游 `JE_scanForEpisodes()` 的可用性判斷
 - 已新增 `TyrianHelpTextLoader`，episode 名稱現在優先從 `tyrian.hdt` 讀取上游加密 Pascal string，而不是使用內建常數
@@ -435,3 +437,19 @@
 - `UpgradeMenuScene` 已改成兩層互動：先選分類、再進 submenu 選 item，`Esc` 可從 submenu 返回分類層，整體流程更接近上游 `MENU_UPGRADES -> MENU_UPGRADE_SUB`
 - `UpgradeMenuScene` 的 submenu 已支援可捲動視窗，分類項目超過可視列數時，清單會跟著目前 slot 移動，並顯示上下提示
 - `UpgradeMenuScene` 的 category 層已補上 `Done` 列與每個分類的目前裝備摘要，開始接近上游主升級選單的資訊密度
+- 已將 `UpgradeMenuScene` 的 submenu 互動改為 `Up/Down` 垂直清單，並補上 prepare / commit / revert 語意，`Done` 才會寫回裝備，`Esc` 會捨棄未提交變更
+- 已將三個專案目標框架降為 `.NET Framework 4.0 (net40)`
+- 已移除 `System.Memory` / `System.Buffers` 額外相依，framebuffer / decoder / GDI 交界改回純陣列實作
+- 已將 `IReadOnlyList` / `IReadOnlyDictionary` 收斂為 `.NET 4.0` 可用的 `IList` / `IDictionary`
+- 已將資料目錄解析改為 `AppDomain.CurrentDomain.BaseDirectory`，避免依賴較新的 `AppContext`
+- 已確認目前 solution 可由 Visual Studio `MSBuild.exe` 成功 restore + build 成 `net40`
+- 已將可執行輸出與 `tyrian21` 資料整理到根目錄 `build`
+- network 功能正式列為停用，不再規劃後續實作
+- 已將 `ItemCatalog` 擴充為真正載入 shop item cost，front/rear weapon、ship、shield、generator、sidekick 現在都可取得價格資料
+- 已新增 `ItemPriceCalculator`，目前可依上游 `JE_getCost()` / `weapon_upgrade_cost()` 規則計算武器 base cost、總價值與 power 升降級步進成本
+- `PlayerLoadoutState` 現在會追蹤 front / rear weapon power，loadout 摘要已會顯示 weapon power
+- `UpgradeMenuScene` 現在會顯示準備中/已裝備項目的 cost 與 weapon power，並可用 `Left/Right` 調整 front / rear weapon power
+- 已將 WinForms 輸入抽象擴成滑鼠座標與左右鍵 snapshot，並完成 Panel -> 320x200 framebuffer 座標映射
+- `MainMenuScene` 與 `EpisodeSelectScene` 現在可用滑鼠 hover/click 操作，輸入層開始進入第 5 階段
+- `1P Arcade` / `2P Arcade` 不再是無反應選項，現在會帶著對應 `GameStartMode` 實際進入 episode select 與 episode session
+- `EpisodeSessionState` 已開始保存 start mode / player count，`EpisodeSessionScene` 顯示的 session 摘要會反映目前模式

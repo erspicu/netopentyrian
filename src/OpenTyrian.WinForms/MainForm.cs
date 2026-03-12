@@ -5,14 +5,14 @@ namespace OpenTyrian.WinForms;
 public sealed class MainForm : Form
 {
     private readonly GameHost _gameHost;
-    private readonly WinFormsKeyboardInputSource _inputSource;
+    private readonly WinFormsInputSource _inputSource;
     private readonly Panel _renderPanel;
     private readonly Label _statusLabel;
     private readonly System.Windows.Forms.Timer _frameTimer;
     private readonly GdiVideoDevice _videoDevice;
     private DateTime _lastFrameUtc;
 
-    public MainForm(GameHost gameHost, WinFormsKeyboardInputSource inputSource)
+    public MainForm(GameHost gameHost, WinFormsInputSource inputSource)
     {
         _gameHost = gameHost;
         _inputSource = inputSource;
@@ -31,6 +31,10 @@ public sealed class MainForm : Form
         };
         _renderPanel.Resize += (_, _) => _renderPanel.Invalidate();
         _renderPanel.Paint += RenderPanelOnPaint;
+        _renderPanel.MouseMove += OnRenderPanelMouseMove;
+        _renderPanel.MouseLeave += OnRenderPanelMouseLeave;
+        _renderPanel.MouseDown += OnRenderPanelMouseDown;
+        _renderPanel.MouseUp += OnRenderPanelMouseUp;
 
         _statusLabel = new Label
         {
@@ -69,7 +73,7 @@ public sealed class MainForm : Form
         _lastFrameUtc = nowUtc;
 
         _gameHost.Tick(deltaSeconds);
-        _gameHost.FrameBuffer.Pixels.CopyTo(_videoDevice.LockFrame());
+        Array.Copy(_gameHost.FrameBuffer.Pixels, _videoDevice.LockFrame(), _gameHost.FrameBuffer.Pixels.Length);
         _videoDevice.Present();
     }
 
@@ -93,5 +97,38 @@ public sealed class MainForm : Form
     private void OnKeyUp(object? sender, KeyEventArgs e)
     {
         _inputSource.SetKeyState(e.KeyCode, isDown: false);
+    }
+
+    private void OnRenderPanelMouseMove(object? sender, MouseEventArgs e)
+    {
+        UpdatePointerPosition(e.Location);
+    }
+
+    private void OnRenderPanelMouseLeave(object? sender, EventArgs e)
+    {
+        _inputSource.ClearPointer();
+    }
+
+    private void OnRenderPanelMouseDown(object? sender, MouseEventArgs e)
+    {
+        UpdatePointerPosition(e.Location);
+        _inputSource.SetPointerButtonState(e.Button, isDown: true);
+    }
+
+    private void OnRenderPanelMouseUp(object? sender, MouseEventArgs e)
+    {
+        UpdatePointerPosition(e.Location);
+        _inputSource.SetPointerButtonState(e.Button, isDown: false);
+    }
+
+    private void UpdatePointerPosition(Point clientPoint)
+    {
+        if (_videoDevice.TryMapClientPointToFrame(clientPoint, out Point framePoint))
+        {
+            _inputSource.SetPointerPosition(framePoint.X, framePoint.Y, present: true);
+            return;
+        }
+
+        _inputSource.SetPointerPosition(0, 0, present: false);
     }
 }

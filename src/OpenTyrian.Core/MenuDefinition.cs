@@ -6,5 +6,5 @@ public sealed class MenuDefinition
 
     public required string Footer { get; init; }
 
-    public required IReadOnlyList<MenuItemDefinition> Items { get; init; }
+    public required IList<MenuItemDefinition> Items { get; init; }
 }

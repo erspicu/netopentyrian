@@ -15,10 +15,13 @@ public sealed class IndexedFrameBuffer
 
     public int Height { get; }
 
-    public Span<byte> Pixels => _pixels;
+    public byte[] Pixels => _pixels;
 
     public void Clear(byte colorIndex = 0)
     {
-        _pixels.AsSpan().Fill(colorIndex);
+        for (int i = 0; i < _pixels.Length; i++)
+        {
+            _pixels[i] = colorIndex;
+        }
     }
 }

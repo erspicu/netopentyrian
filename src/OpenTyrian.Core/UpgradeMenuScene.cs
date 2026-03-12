@@ -12,7 +12,9 @@ public sealed class UpgradeMenuScene : IScene
 
     private readonly EpisodeSessionState _sessionState;
     private readonly int[] _selectedSlots;
-    private readonly int?[] _confirmedItemIds;
+    private readonly int[] _preparedItemIds;
+    private readonly int[] _preparedWeaponPowers;
+    private readonly int[][] _slotWeaponPowers;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _selectedCategoryIndex;
     private string _statusText;
@@ -22,7 +24,9 @@ public sealed class UpgradeMenuScene : IScene
     {
         _sessionState = sessionState;
         _selectedSlots = new int[Math.Max(1, sessionState.ShopCategories.Count)];
-        _confirmedItemIds = new int?[Math.Max(1, sessionState.ShopCategories.Count)];
+        _preparedItemIds = new int[Math.Max(1, sessionState.ShopCategories.Count)];
+        _preparedWeaponPowers = new int[Math.Max(1, sessionState.ShopCategories.Count)];
+        _slotWeaponPowers = new int[Math.Max(1, sessionState.ShopCategories.Count)][];
         _selectedCategoryIndex = 0;
         _statusText = "Select a shop category";
         _mode = UpgradeMenuMode.CategorySelect;
@@ -37,13 +41,19 @@ public sealed class UpgradeMenuScene : IScene
         bool downPressed = input.Down && !_previousInput.Down;
         bool leftPressed = input.Left && !_previousInput.Left;
         bool rightPressed = input.Right && !_previousInput.Right;
+        ShopCategory? category = GetSelectedCategory();
 
         if (cancelPressed)
         {
             if (_mode == UpgradeMenuMode.ItemSelect)
             {
+                if (category is not null)
+                {
+                    RevertPreparedSelection(category);
+                    _statusText = $"{category.DisplayName} changes discarded";
+                }
+
                 _mode = UpgradeMenuMode.CategorySelect;
-                _statusText = "Returned to category select";
                 _previousInput = input;
                 return null;
             }
@@ -58,31 +68,47 @@ public sealed class UpgradeMenuScene : IScene
             return null;
         }
 
-        if (_mode == UpgradeMenuMode.CategorySelect && upPressed)
+        if (_mode == UpgradeMenuMode.CategorySelect)
         {
-            _selectedCategoryIndex = _selectedCategoryIndex == 0
-                ? GetCategoryRowCount() - 1
-                : _selectedCategoryIndex - 1;
+            if (upPressed)
+            {
+                _selectedCategoryIndex = _selectedCategoryIndex == 0
+                    ? GetCategoryRowCount() - 1
+                    : _selectedCategoryIndex - 1;
+                category = GetSelectedCategory();
+            }
+
+            if (downPressed)
+            {
+                _selectedCategoryIndex = (_selectedCategoryIndex + 1) % GetCategoryRowCount();
+                category = GetSelectedCategory();
+            }
         }
-
-        if (_mode == UpgradeMenuMode.CategorySelect && downPressed)
+        else if (category is not null)
         {
-            _selectedCategoryIndex = (_selectedCategoryIndex + 1) % GetCategoryRowCount();
-        }
+            int selectableCount = Math.Max(1, category.ItemCount + 1);
 
-        ShopCategory? category = GetSelectedCategory();
-        int selectableCount = Math.Max(1, (category?.ItemCount ?? 0) + 1);
+            if (upPressed)
+            {
+                _selectedSlots[_selectedCategoryIndex] = _selectedSlots[_selectedCategoryIndex] == 0
+                    ? selectableCount - 1
+                    : _selectedSlots[_selectedCategoryIndex] - 1;
+            }
 
-        if (_mode == UpgradeMenuMode.ItemSelect && leftPressed)
-        {
-            _selectedSlots[_selectedCategoryIndex] = _selectedSlots[_selectedCategoryIndex] == 0
-                ? selectableCount - 1
-                : _selectedSlots[_selectedCategoryIndex] - 1;
-        }
+            if (downPressed)
+            {
+                _selectedSlots[_selectedCategoryIndex] = (_selectedSlots[_selectedCategoryIndex] + 1) % selectableCount;
+            }
 
-        if (_mode == UpgradeMenuMode.ItemSelect && rightPressed)
-        {
-            _selectedSlots[_selectedCategoryIndex] = (_selectedSlots[_selectedCategoryIndex] + 1) % selectableCount;
+            if (leftPressed)
+            {
+                TryAdjustSelectedWeaponPower(category, -1, resources.ItemCatalog);
+            }
+
+            if (rightPressed)
+            {
+                TryAdjustSelectedWeaponPower(category, 1, resources.ItemCatalog);
+            }
         }
 
         if (confirmPressed)
@@ -95,22 +121,33 @@ public sealed class UpgradeMenuScene : IScene
                     return new EpisodeSessionScene(_sessionState);
                 }
 
+                SyncSelectedSlotToPrepared(category);
                 _mode = UpgradeMenuMode.ItemSelect;
                 _statusText = $"{category.DisplayName} submenu opened";
             }
-            else if (category is not null && _selectedSlots[_selectedCategoryIndex] >= category.ItemCount)
+            else if (category is not null && IsDoneRow(category, _selectedSlots[_selectedCategoryIndex]))
             {
+                CommitPreparedSelection(category, resources.ItemCatalog);
                 _mode = UpgradeMenuMode.CategorySelect;
-                _statusText = $"{category.DisplayName} submenu closed";
             }
             else
             {
-                int itemId = category is not null && category.ItemCount > 0 ? category.ItemIds[_selectedSlots[_selectedCategoryIndex]] : 0;
-                _confirmedItemIds[_selectedCategoryIndex] = itemId;
                 if (category is not null)
                 {
-                    _sessionState.EquipShopItem(category.Kind, itemId);
-                    _statusText = $"Equipped {ItemNameResolver.GetItemName(category.Kind, itemId, resources.ItemCatalog)}";
+                    int itemId = category.ItemCount > 0 ? category.ItemIds[_selectedSlots[_selectedCategoryIndex]] : 0;
+                    _preparedItemIds[_selectedCategoryIndex] = itemId;
+                    if (ItemPriceCalculator.IsWeaponCategory(category.Kind))
+                    {
+                        _preparedWeaponPowers[_selectedCategoryIndex] = GetSelectedWeaponPower(category, _selectedSlots[_selectedCategoryIndex]);
+                    }
+                    else
+                    {
+                        _preparedWeaponPowers[_selectedCategoryIndex] = 0;
+                    }
+
+                    _statusText = string.Format(
+                        "Prepared {0}",
+                        BuildPreparedSelectionLabel(category.Kind, itemId, _preparedWeaponPowers[_selectedCategoryIndex], resources.ItemCatalog));
                 }
             }
         }
@@ -152,7 +189,10 @@ public sealed class UpgradeMenuScene : IScene
             {
                 ShopCategory category = _sessionState.ShopCategories[i];
                 int equippedSummaryId = _sessionState.PlayerLoadout.GetEquippedItemId(category.Kind);
-                label = $"{category.DisplayName} ({category.ItemCount}) [{ItemNameResolver.GetCompactItemName(category.Kind, equippedSummaryId, resources.ItemCatalog)}]";
+                int preparedSummaryId = _preparedItemIds[i];
+                int equippedSummaryPower = _sessionState.PlayerLoadout.GetWeaponPower(category.Kind);
+                int preparedSummaryPower = _preparedWeaponPowers[i];
+                label = $"{category.DisplayName} ({category.ItemCount}) [{BuildCategorySummary(category.Kind, equippedSummaryId, preparedSummaryId, equippedSummaryPower, preparedSummaryPower, resources.ItemCatalog)}]";
                 if (_mode == UpgradeMenuMode.ItemSelect && selected)
                 {
                     label += " [open]";
@@ -180,21 +220,26 @@ public sealed class UpgradeMenuScene : IScene
         }
 
         int selectedSlot = _selectedSlots[_selectedCategoryIndex];
-        int selectedItemId = selectedCategory.ItemCount > 0 && selectedSlot < selectedCategory.ItemCount ? selectedCategory.ItemIds[selectedSlot] : 0;
-        int? confirmedItemId = _confirmedItemIds[_selectedCategoryIndex];
+        bool selectedDoneRow = IsDoneRow(selectedCategory, selectedSlot);
+        int selectedItemId = selectedCategory.ItemCount > 0 && !selectedDoneRow ? selectedCategory.ItemIds[selectedSlot] : 0;
+        int preparedItemId = _preparedItemIds[_selectedCategoryIndex];
+        int preparedWeaponPower = _preparedWeaponPowers[_selectedCategoryIndex];
         int equippedItemId = _sessionState.PlayerLoadout.GetEquippedItemId(selectedCategory.Kind);
-        string rowPreview = selectedCategory.ItemCount > 0
-            ? string.Join(", ", selectedCategory.ItemIds.Take(4)) + (selectedCategory.ItemCount > 4 ? "..." : string.Empty)
-            : "<empty>";
+        int equippedWeaponPower = _sessionState.PlayerLoadout.GetWeaponPower(selectedCategory.Kind);
+        int selectedWeaponPower = GetSelectedWeaponPower(selectedCategory, selectedSlot);
+        int baseCost = ItemPriceCalculator.GetBaseCost(selectedCategory.Kind, selectedItemId, resources.ItemCatalog);
+        int totalValue = ItemPriceCalculator.GetItemValue(selectedCategory.Kind, selectedItemId, selectedWeaponPower, resources.ItemCatalog);
+        int upgradeCost = ItemPriceCalculator.GetWeaponUpgradeCost(selectedCategory.Kind, selectedItemId, selectedWeaponPower, resources.ItemCatalog);
+        int downgradeValue = ItemPriceCalculator.GetWeaponDowngradeValue(selectedCategory.Kind, selectedItemId, selectedWeaponPower, resources.ItemCatalog);
 
         resources.FontRenderer.DrawText(surface, 228, 110, selectedCategory.DisplayName, FontKind.Small, FontAlignment.Center, 14, 1, shadow: true);
         resources.FontRenderer.DrawText(surface, 228, 132, $"row index: {selectedCategory.AvailabilityRowIndex + 1}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 228, 144, $"slot: {selectedSlot + 1}/{Math.Max(1, selectedCategory.ItemCount + 1)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 228, 156, ItemNameResolver.GetItemName(selectedCategory.Kind, selectedItemId, resources.ItemCatalog), FontKind.Tiny, FontAlignment.Center, 15, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 228, 168, $"prepared: {ItemNameResolver.GetCompactItemName(selectedCategory.Kind, confirmedItemId ?? 0, resources.ItemCatalog)} equipped: {ItemNameResolver.GetCompactItemName(selectedCategory.Kind, equippedItemId, resources.ItemCatalog)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 228, 180, $"preview: {rowPreview}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 228, 156, selectedDoneRow ? "Done" : BuildPreparedSelectionLabel(selectedCategory.Kind, selectedItemId, selectedWeaponPower, resources.ItemCatalog), FontKind.Tiny, FontAlignment.Center, 15, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 228, 168, $"prepared: {BuildPreparedSelectionLabel(selectedCategory.Kind, preparedItemId, preparedWeaponPower, resources.ItemCatalog)} equipped: {BuildPreparedSelectionLabel(selectedCategory.Kind, equippedItemId, equippedWeaponPower, resources.ItemCatalog)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 228, 180, BuildCostSummary(selectedCategory.Kind, selectedItemId, selectedWeaponPower, baseCost, totalValue, downgradeValue, upgradeCost), FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
 
-        RenderItemSubmenu(surface, resources.FontRenderer, resources.ItemCatalog, selectedCategory, selectedSlot, confirmedItemId, equippedItemId, _mode == UpgradeMenuMode.ItemSelect);
+        RenderItemSubmenu(surface, resources.FontRenderer, resources.ItemCatalog, selectedCategory, selectedSlot, preparedItemId, equippedItemId, _mode == UpgradeMenuMode.ItemSelect, _slotWeaponPowers[_selectedCategoryIndex]);
 
         resources.FontRenderer.DrawText(surface, 160, 192, _statusText, FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
         resources.FontRenderer.DrawDark(surface, 160, 204, BuildFooterText(), FontKind.Tiny, FontAlignment.Center, black: false);
@@ -204,12 +249,7 @@ public sealed class UpgradeMenuScene : IScene
     {
         for (int i = 0; i < _sessionState.ShopCategories.Count; i++)
         {
-            ShopCategory category = _sessionState.ShopCategories[i];
-            int equippedItemId = _sessionState.PlayerLoadout.GetEquippedItemId(category.Kind);
-            int equippedSlot = FindItemSlot(category, equippedItemId);
-
-            _selectedSlots[i] = equippedSlot >= 0 ? equippedSlot : 0;
-            _confirmedItemIds[i] = equippedItemId != 0 ? equippedItemId : null;
+            InitializeCategoryState(i, _sessionState.ShopCategories[i]);
         }
     }
 
@@ -243,15 +283,149 @@ public sealed class UpgradeMenuScene : IScene
         return -1;
     }
 
+    private void InitializeCategoryState(int categoryIndex, ShopCategory category)
+    {
+        int equippedItemId = _sessionState.PlayerLoadout.GetEquippedItemId(category.Kind);
+        int equippedSlot = FindItemSlot(category, equippedItemId);
+        int equippedPower = _sessionState.PlayerLoadout.GetWeaponPower(category.Kind);
+
+        _selectedSlots[categoryIndex] = equippedSlot >= 0 ? equippedSlot : 0;
+        _preparedItemIds[categoryIndex] = equippedItemId;
+        _preparedWeaponPowers[categoryIndex] = equippedPower;
+        _slotWeaponPowers[categoryIndex] = BuildSlotWeaponPowers(category, equippedSlot, equippedPower);
+    }
+
+    private static int[] BuildSlotWeaponPowers(ShopCategory category, int equippedSlot, int equippedPower)
+    {
+        int[] slotPowers = new int[Math.Max(1, category.ItemCount + 1)];
+        if (!ItemPriceCalculator.IsWeaponCategory(category.Kind))
+        {
+            return slotPowers;
+        }
+
+        for (int i = 0; i < category.ItemCount; i++)
+        {
+            slotPowers[i] = category.ItemIds[i] == 0 ? 0 : 1;
+        }
+
+        if (equippedSlot >= 0 && equippedSlot < category.ItemCount && category.ItemIds[equippedSlot] != 0)
+        {
+            slotPowers[equippedSlot] = equippedPower > 0 ? equippedPower : 1;
+        }
+
+        return slotPowers;
+    }
+
+    private void SyncSelectedSlotToPrepared(ShopCategory category)
+    {
+        int preparedSlot = FindItemSlot(category, _preparedItemIds[_selectedCategoryIndex]);
+        _selectedSlots[_selectedCategoryIndex] = preparedSlot >= 0 ? preparedSlot : 0;
+    }
+
+    private void RevertPreparedSelection(ShopCategory category)
+    {
+        InitializeCategoryState(_selectedCategoryIndex, category);
+    }
+
+    private void CommitPreparedSelection(ShopCategory category, ItemCatalog? itemCatalog)
+    {
+        int preparedItemId = _preparedItemIds[_selectedCategoryIndex];
+        int equippedItemId = _sessionState.PlayerLoadout.GetEquippedItemId(category.Kind);
+        int preparedWeaponPower = _preparedWeaponPowers[_selectedCategoryIndex];
+        int equippedWeaponPower = _sessionState.PlayerLoadout.GetWeaponPower(category.Kind);
+        _sessionState.EquipShopItem(category.Kind, preparedItemId);
+        if (ItemPriceCalculator.IsWeaponCategory(category.Kind))
+        {
+            _sessionState.SetWeaponPower(category.Kind, preparedWeaponPower);
+        }
+
+        _statusText = preparedItemId == equippedItemId && preparedWeaponPower == equippedWeaponPower
+            ? $"{category.DisplayName} unchanged"
+            : $"Equipped {BuildPreparedSelectionLabel(category.Kind, preparedItemId, preparedWeaponPower, itemCatalog)}";
+        InitializeCategoryState(_selectedCategoryIndex, category);
+    }
+
+    private int GetSelectedWeaponPower(ShopCategory category, int slotIndex)
+    {
+        if (!ItemPriceCalculator.IsWeaponCategory(category.Kind) || IsDoneRow(category, slotIndex))
+        {
+            return 0;
+        }
+
+        if (slotIndex < 0 || slotIndex >= category.ItemCount)
+        {
+            return 0;
+        }
+
+        int itemId = category.ItemIds[slotIndex];
+        if (itemId == 0)
+        {
+            return 0;
+        }
+
+        int[] slotPowers = _slotWeaponPowers[_selectedCategoryIndex];
+        if (slotPowers is null || slotIndex >= slotPowers.Length)
+        {
+            return 1;
+        }
+
+        return ItemPriceCalculator.ClampWeaponPower(itemId, slotPowers[slotIndex]);
+    }
+
+    private void TryAdjustSelectedWeaponPower(ShopCategory category, int delta, ItemCatalog? itemCatalog)
+    {
+        if (!ItemPriceCalculator.IsWeaponCategory(category.Kind))
+        {
+            return;
+        }
+
+        int selectedSlot = _selectedSlots[_selectedCategoryIndex];
+        if (IsDoneRow(category, selectedSlot) || selectedSlot < 0 || selectedSlot >= category.ItemCount)
+        {
+            return;
+        }
+
+        int itemId = category.ItemIds[selectedSlot];
+        if (itemId == 0)
+        {
+            return;
+        }
+
+        int[] slotPowers = _slotWeaponPowers[_selectedCategoryIndex];
+        int currentPower = GetSelectedWeaponPower(category, selectedSlot);
+        int nextPower = ItemPriceCalculator.ClampWeaponPower(itemId, currentPower + delta);
+        if (currentPower == nextPower)
+        {
+            return;
+        }
+
+        slotPowers[selectedSlot] = nextPower;
+        if (_preparedItemIds[_selectedCategoryIndex] == itemId)
+        {
+            _preparedWeaponPowers[_selectedCategoryIndex] = nextPower;
+        }
+
+        _statusText = string.Format(
+            "{0} power {1}",
+            ItemNameResolver.GetCompactItemName(category.Kind, itemId, itemCatalog),
+            nextPower);
+    }
+
+    private static bool IsDoneRow(ShopCategory category, int slotIndex)
+    {
+        return slotIndex >= category.ItemCount;
+    }
+
     private static void RenderItemSubmenu(
         IndexedFrameBuffer surface,
         TyrianFontRenderer fontRenderer,
         ItemCatalog? itemCatalog,
         ShopCategory selectedCategory,
         int selectedSlot,
-        int? confirmedItemId,
+        int preparedItemId,
         int equippedItemId,
-        bool submenuOpen)
+        bool submenuOpen,
+        int[] slotWeaponPowers)
     {
         int totalRows = Math.Max(1, selectedCategory.ItemCount + 1);
         int visibleCount = Math.Min(VisibleSubmenuRows, totalRows);
@@ -279,9 +453,10 @@ public sealed class UpgradeMenuScene : IScene
             else if (rowIndex < selectedCategory.ItemCount)
             {
                 int itemId = selectedCategory.ItemIds[rowIndex];
-                bool isPrepared = confirmedItemId.HasValue && confirmedItemId.Value == itemId;
+                bool isPrepared = preparedItemId == itemId;
                 bool isEquipped = equippedItemId == itemId;
-                label = BuildItemLabel(itemCatalog, selectedCategory, itemId, isPrepared, isEquipped);
+                int power = slotWeaponPowers is not null && rowIndex < slotWeaponPowers.Length ? slotWeaponPowers[rowIndex] : 0;
+                label = BuildItemLabel(itemCatalog, selectedCategory, itemId, power, isPrepared, isEquipped);
                 hue = isSelected ? (byte)15 : (isPrepared ? (byte)14 : isEquipped ? (byte)12 : (byte)13);
                 value = isSelected ? 4 : (isPrepared ? 2 : isEquipped ? 1 : 0);
             }
@@ -339,12 +514,12 @@ public sealed class UpgradeMenuScene : IScene
     {
         return _mode == UpgradeMenuMode.CategorySelect
             ? "Up/Down category  Enter open/done  Esc back"
-            : "Left/Right item  Enter equip/done  Esc category list";
+            : "Up/Down item  Left/Right power  Enter prepare/done  Esc revert";
     }
 
-    private static string BuildItemLabel(ItemCatalog? itemCatalog, ShopCategory category, int itemId, bool isPrepared, bool isEquipped)
+    private static string BuildItemLabel(ItemCatalog? itemCatalog, ShopCategory category, int itemId, int weaponPower, bool isPrepared, bool isEquipped)
     {
-        string itemName = ItemNameResolver.GetCompactItemName(category.Kind, itemId, itemCatalog);
+        string itemName = BuildPreparedSelectionLabel(category.Kind, itemId, weaponPower, itemCatalog);
 
         if (isPrepared)
         {
@@ -357,5 +532,49 @@ public sealed class UpgradeMenuScene : IScene
         }
 
         return itemName;
+    }
+
+    private static string BuildCategorySummary(ItemCategoryKind kind, int equippedItemId, int preparedItemId, int equippedWeaponPower, int preparedWeaponPower, ItemCatalog? itemCatalog)
+    {
+        string equippedName = BuildPreparedSelectionLabel(kind, equippedItemId, equippedWeaponPower, itemCatalog);
+        if (preparedItemId == equippedItemId && preparedWeaponPower == equippedWeaponPower)
+        {
+            return equippedName;
+        }
+
+        string preparedName = BuildPreparedSelectionLabel(kind, preparedItemId, preparedWeaponPower, itemCatalog);
+        return $"{equippedName} -> {preparedName}";
+    }
+
+    private static string BuildPreparedSelectionLabel(ItemCategoryKind kind, int itemId, int weaponPower, ItemCatalog? itemCatalog)
+    {
+        string itemName = ItemNameResolver.GetCompactItemName(kind, itemId, itemCatalog);
+        if (!ItemPriceCalculator.IsWeaponCategory(kind) || itemId == 0)
+        {
+            return itemName;
+        }
+
+        return string.Format("{0} x{1}", itemName, ItemPriceCalculator.ClampWeaponPower(itemId, weaponPower));
+    }
+
+    private static string BuildCostSummary(ItemCategoryKind kind, int itemId, int weaponPower, int baseCost, int totalValue, int downgradeValue, int upgradeCost)
+    {
+        if (itemId == 0)
+        {
+            return "cost: 0";
+        }
+
+        if (!ItemPriceCalculator.IsWeaponCategory(kind))
+        {
+            return string.Format("cost: {0}", baseCost);
+        }
+
+        return string.Format(
+            "base:{0} value:{1} pwr:{2} -{3} +{4}",
+            baseCost,
+            totalValue,
+            weaponPower,
+            downgradeValue,
+            upgradeCost);
     }
 }

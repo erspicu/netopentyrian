@@ -38,7 +38,7 @@ public static class PcxLoader
                 data[colorOffset + 2]);
         }
 
-        byte[] pixels = DecodeImageData(data.AsSpan(128, paletteMarkerOffset - 128), width * height);
+        byte[] pixels = DecodeImageData(data, 128, paletteMarkerOffset - 128, width * height);
         return new PcxImage(width, height, pixels, palette);
     }
 
@@ -49,27 +49,30 @@ public static class PcxLoader
         return end - start + 1;
     }
 
-    private static byte[] DecodeImageData(ReadOnlySpan<byte> encoded, int pixelCount)
+    private static byte[] DecodeImageData(byte[] encoded, int offset, int length, int pixelCount)
     {
         byte[] output = new byte[pixelCount];
-        int src = 0;
+        int src = offset;
+        int end = offset + length;
         int dst = 0;
 
-        while (src < encoded.Length && dst < output.Length)
+        while (src < end && dst < output.Length)
         {
             byte value = encoded[src++];
             if ((value & 0xC0) == 0xC0)
             {
                 int runLength = value & 0x3F;
-                if (src >= encoded.Length)
+                if (src >= end)
                 {
                     throw new InvalidDataException("Invalid PCX RLE stream.");
                 }
 
                 byte runValue = encoded[src++];
                 int count = Math.Min(runLength, output.Length - dst);
-                output.AsSpan(dst, count).Fill(runValue);
-                dst += count;
+                for (int i = 0; i < count; i++)
+                {
+                    output[dst++] = runValue;
+                }
             }
             else
             {

@@ -1,5 +1,3 @@
-using System.Buffers.Binary;
-
 namespace OpenTyrian.Core;
 
 public sealed class TyrianDataStream : IDisposable
@@ -44,46 +42,47 @@ public sealed class TyrianDataStream : IDisposable
 
     public ushort ReadUInt16()
     {
-        Span<byte> buffer = stackalloc byte[sizeof(ushort)];
-        ReadExactly(buffer);
-        return BinaryPrimitives.ReadUInt16LittleEndian(buffer);
+        byte[] buffer = ReadBytes(2);
+        return (ushort)(buffer[0] | (buffer[1] << 8));
     }
 
     public short ReadInt16()
     {
-        Span<byte> buffer = stackalloc byte[sizeof(short)];
-        ReadExactly(buffer);
-        return BinaryPrimitives.ReadInt16LittleEndian(buffer);
+        return unchecked((short)ReadUInt16());
     }
 
     public uint ReadUInt32()
     {
-        Span<byte> buffer = stackalloc byte[sizeof(uint)];
-        ReadExactly(buffer);
-        return BinaryPrimitives.ReadUInt32LittleEndian(buffer);
+        byte[] buffer = ReadBytes(4);
+        return (uint)(buffer[0] |
+            (buffer[1] << 8) |
+            (buffer[2] << 16) |
+            (buffer[3] << 24));
     }
 
     public int ReadInt32()
     {
-        Span<byte> buffer = stackalloc byte[sizeof(int)];
-        ReadExactly(buffer);
-        return BinaryPrimitives.ReadInt32LittleEndian(buffer);
+        return unchecked((int)ReadUInt32());
     }
 
     public byte[] ReadBytes(int count)
     {
         byte[] buffer = new byte[count];
-        ReadExactly(buffer);
+        ReadExactly(buffer, 0, count);
         return buffer;
     }
 
-    public void ReadExactly(Span<byte> buffer)
+    public void ReadExactly(byte[] buffer)
     {
-        byte[] temp = new byte[buffer.Length];
+        ReadExactly(buffer, 0, buffer.Length);
+    }
+
+    public void ReadExactly(byte[] buffer, int offset, int count)
+    {
         int totalRead = 0;
-        while (totalRead < temp.Length)
+        while (totalRead < count)
         {
-            int read = _stream.Read(temp, totalRead, temp.Length - totalRead);
+            int read = _stream.Read(buffer, offset + totalRead, count - totalRead);
             if (read <= 0)
             {
                 throw new EndOfStreamException("Unexpected end of stream while reading data.");
@@ -91,8 +90,6 @@ public sealed class TyrianDataStream : IDisposable
 
             totalRead += read;
         }
-
-        temp.AsSpan().CopyTo(buffer);
     }
 
     public void Seek(long offset, SeekOrigin origin)

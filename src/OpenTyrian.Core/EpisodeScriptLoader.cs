@@ -16,7 +16,7 @@ public static class EpisodeScriptLoader
                 Length = 0,
                 PreviewStringCount = 0,
                 SectionMarkerCount = 0,
-                Sections = Array.Empty<EpisodeSectionInfo>(),
+                Sections = new EpisodeSectionInfo[0],
             };
         }
 
@@ -108,7 +108,7 @@ public static class EpisodeScriptLoader
         if (kind == EpisodeCommandKind.ItemAvailabilityBlock)
         {
             blockLines = [];
-            List<IReadOnlyList<int>> rows = [];
+            List<IList<int>> rows = [];
             List<int> maxPerRow = [];
             for (int i = 0; i < 9 && data.Position < data.Length; i++)
             {
@@ -121,7 +121,7 @@ public static class EpisodeScriptLoader
 
                 blockLines.Add(line);
                 string numericSource = line.Length > 8 ? line.Substring(8) : string.Empty;
-                IReadOnlyList<int> row = ParseIntRow(numericSource);
+                IList<int> row = ParseIntRow(numericSource);
                 rows.Add(row);
                 maxPerRow.Add(row.Count);
             }
@@ -145,7 +145,7 @@ public static class EpisodeScriptLoader
         };
     }
 
-    private static IReadOnlyList<int> ParseIntRow(string text)
+    private static IList<int> ParseIntRow(string text)
     {
         List<int> values = [];
         string remaining = text;

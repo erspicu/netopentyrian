@@ -14,7 +14,7 @@ public sealed class Sprite2Sheet
 
     public int Count => Offsets.Length;
 
-    public ReadOnlySpan<byte> GetSpriteData(int index)
+    public ArraySegment<byte> GetSpriteData(int index)
     {
         if (index < 1 || index > Offsets.Length)
         {
@@ -29,6 +29,6 @@ public sealed class Sprite2Sheet
             throw new InvalidDataException("Invalid sprite2 offset table.");
         }
 
-        return Data.AsSpan(start, end - start);
+        return new ArraySegment<byte>(Data, start, end - start);
     }
 }

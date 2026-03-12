@@ -8,8 +8,9 @@ public sealed class TitleScene : IScene
     {
         bool confirmPressed = input.Confirm && !_previousInput.Confirm;
         bool downPressed = input.Down && !_previousInput.Down;
+        bool pointerConfirmPressed = input.PointerConfirm && !_previousInput.PointerConfirm;
 
-        if (confirmPressed || downPressed)
+        if (confirmPressed || downPressed || pointerConfirmPressed)
         {
             _previousInput = input;
             return new MainMenuScene();
@@ -27,7 +28,7 @@ public sealed class TitleScene : IScene
             surface,
             160,
             150,
-            "Press ~Enter~ to open menu",
+            "Press ~Enter~ or click to open menu",
             FontKind.Tiny,
             FontAlignment.Center,
             12,

@@ -15,5 +15,5 @@ public sealed class ArgbFrameBuffer
 
     public int Height { get; }
 
-    public Span<uint> Pixels => _pixels;
+    public uint[] Pixels => _pixels;
 }

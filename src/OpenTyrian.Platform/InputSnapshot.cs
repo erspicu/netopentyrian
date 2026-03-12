@@ -8,6 +8,16 @@ public readonly record struct InputSnapshot(
     bool Confirm,
     bool Cancel)
 {
+    public bool PointerPresent { get; init; }
+
+    public int PointerX { get; init; }
+
+    public int PointerY { get; init; }
+
+    public bool PointerConfirm { get; init; }
+
+    public bool PointerCancel { get; init; }
+
     public bool IsDown(InputButton button)
     {
         return button switch

@@ -12,7 +12,7 @@ public sealed class EpisodeCommandInfo
 
     public int? TargetMainLevel { get; init; }
 
-    public IReadOnlyList<string>? BlockLines { get; init; }
+    public IList<string>? BlockLines { get; init; }
 
     public ItemAvailabilityInfo? ItemAvailability { get; init; }
 }

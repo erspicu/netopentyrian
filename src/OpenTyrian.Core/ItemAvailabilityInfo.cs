@@ -15,11 +15,11 @@ public sealed class ItemAvailabilityInfo
         ItemCategoryKind.SidekickRight,
     ];
 
-    public required IReadOnlyList<IReadOnlyList<int>> Rows { get; init; }
+    public required IList<IList<int>> Rows { get; init; }
 
-    public required IReadOnlyList<int> MaxPerRow { get; init; }
+    public required IList<int> MaxPerRow { get; init; }
 
-    public IReadOnlyList<ShopCategory> ShopCategories => BuildShopCategories();
+    public IList<ShopCategory> ShopCategories => BuildShopCategories();
 
     public int GetValue(int rowIndex, int slotIndex)
     {
@@ -28,14 +28,14 @@ public sealed class ItemAvailabilityInfo
             return 0;
         }
 
-        IReadOnlyList<int> row = Rows[rowIndex];
+        IList<int> row = Rows[rowIndex];
         return slotIndex >= 0 && slotIndex < row.Count ? row[slotIndex] : 0;
     }
 
-    public IReadOnlyList<int> GetRow(ItemCategoryKind kind)
+    public IList<int> GetRow(ItemCategoryKind kind)
     {
         int rowIndex = GetRowIndex(kind);
-        return rowIndex >= 0 && rowIndex < Rows.Count ? Rows[rowIndex] : Array.Empty<int>();
+        return rowIndex >= 0 && rowIndex < Rows.Count ? Rows[rowIndex] : new int[0];
     }
 
     public int GetMax(ItemCategoryKind kind)
@@ -44,7 +44,7 @@ public sealed class ItemAvailabilityInfo
         return rowIndex >= 0 && rowIndex < MaxPerRow.Count ? MaxPerRow[rowIndex] : 0;
     }
 
-    private IReadOnlyList<ShopCategory> BuildShopCategories()
+    private IList<ShopCategory> BuildShopCategories()
     {
         List<ShopCategory> categories = new(UpgradeCategoryMap.Length);
         foreach (ItemCategoryKind kind in UpgradeCategoryMap)

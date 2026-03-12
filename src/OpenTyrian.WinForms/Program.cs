@@ -13,7 +13,7 @@ static class Program
 
         string dataDirectory = TyrianDataDirectoryResolver.Resolve();
         var assetLocator = new FileSystemAssetLocator(dataDirectory);
-        var inputSource = new WinFormsKeyboardInputSource();
+        var inputSource = new WinFormsInputSource();
         var gameHost = new GameHost(assetLocator, inputSource);
 
         Application.Run(new MainForm(gameHost, inputSource));

@@ -45,14 +45,16 @@ public static class Sprite2Blitter
         bool clip,
         Func<byte, byte, byte> pixelTransform)
     {
-        ReadOnlySpan<byte> data = sheet.GetSpriteData(index);
-        Span<byte> pixels = surface.Pixels;
+        ArraySegment<byte> dataSegment = sheet.GetSpriteData(index);
+        byte[] data = dataSegment.Array ?? new byte[0];
+        byte[] pixels = surface.Pixels;
 
         int x = originX;
         int y = originY;
-        int src = 0;
+        int src = dataSegment.Offset;
+        int end = dataSegment.Offset + dataSegment.Count;
 
-        while (src < data.Length)
+        while (src < end)
         {
             byte token = data[src++];
             if (token == 0x0F)
@@ -71,7 +73,7 @@ public static class Sprite2Blitter
                 continue;
             }
 
-            for (int i = 0; i < fillCount && src < data.Length; i++)
+            for (int i = 0; i < fillCount && src < end; i++)
             {
                 byte sourceColor = data[src++];
 

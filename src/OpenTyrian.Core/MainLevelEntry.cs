@@ -6,5 +6,5 @@ public sealed class MainLevelEntry
 
     public required EpisodeSectionInfo Section { get; init; }
 
-    public IReadOnlyList<EpisodeCommandInfo> Commands => Section.Commands;
+    public IList<EpisodeCommandInfo> Commands => Section.Commands;
 }

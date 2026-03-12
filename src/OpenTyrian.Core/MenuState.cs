@@ -14,6 +14,17 @@ public sealed class MenuState
 
     public MenuItemDefinition SelectedItem => _definition.Items[SelectedIndex];
 
+    public void SetSelectedIndex(int selectedIndex)
+    {
+        if (_definition.Items.Count == 0)
+        {
+            SelectedIndex = 0;
+            return;
+        }
+
+        SelectedIndex = Clamp(selectedIndex, 0, _definition.Items.Count - 1);
+    }
+
     public void MovePrevious()
     {
         if (_definition.Items.Count == 0)

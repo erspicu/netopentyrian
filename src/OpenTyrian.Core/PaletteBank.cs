@@ -6,12 +6,12 @@ public sealed class PaletteBank
     public const int BytesPerColor = 3;
     public const int BytesPerPalette = ColorsPerPalette * BytesPerColor;
 
-    public PaletteBank(IReadOnlyList<PaletteColor[]> palettes)
+    public PaletteBank(IList<PaletteColor[]> palettes)
     {
         Palettes = palettes;
     }
 
-    public IReadOnlyList<PaletteColor[]> Palettes { get; }
+    public IList<PaletteColor[]> Palettes { get; }
 
     public int Count => Palettes.Count;
 }

@@ -3,18 +3,18 @@ namespace OpenTyrian.Core;
 public sealed class TyrianHelpTextCatalog
 {
     public TyrianHelpTextCatalog(
-        IReadOnlyList<string> mainMenuHelp,
-        IReadOnlyList<string> gameplayNames,
-        IReadOnlyList<string> episodeNames)
+        IList<string> mainMenuHelp,
+        IList<string> gameplayNames,
+        IList<string> episodeNames)
     {
         MainMenuHelp = mainMenuHelp;
         GameplayNames = gameplayNames;
         EpisodeNames = episodeNames;
     }
 
-    public IReadOnlyList<string> MainMenuHelp { get; }
+    public IList<string> MainMenuHelp { get; }
 
-    public IReadOnlyList<string> GameplayNames { get; }
+    public IList<string> GameplayNames { get; }
 
-    public IReadOnlyList<string> EpisodeNames { get; }
+    public IList<string> EpisodeNames { get; }
 }

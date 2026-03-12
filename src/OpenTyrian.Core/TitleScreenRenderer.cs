@@ -2,15 +2,20 @@ namespace OpenTyrian.Core;
 
 public static class TitleScreenRenderer
 {
+    private const int MenuCenterX = 160;
+    private const int MenuStartY = 98;
+    private const int MenuRowHeight = 16;
+    private const int MenuHitHalfWidth = 110;
+
     public static void RenderBackground(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
         if (resources.TitleImage is not null)
         {
-            resources.TitleImage.IndexedPixels.CopyTo(surface.Pixels);
+            Array.Copy(resources.TitleImage.IndexedPixels, surface.Pixels, Math.Min(resources.TitleImage.IndexedPixels.Length, surface.Pixels.Length));
         }
         else if (resources.TestPcxImage is not null)
         {
-            resources.TestPcxImage.IndexedPixels.CopyTo(surface.Pixels);
+            Array.Copy(resources.TestPcxImage.IndexedPixels, surface.Pixels, Math.Min(resources.TestPcxImage.IndexedPixels.Length, surface.Pixels.Length));
         }
         else
         {
@@ -28,7 +33,7 @@ public static class TitleScreenRenderer
             return;
         }
 
-        const string title = "OpenTyrian .NET 10";
+        const string title = "OpenTyrian .NET Framework 4.0";
         const string subtitle = "~WinForms~ Panel + GDI";
         string detail = $"~Palette~ {paletteCount}  ~Data~ OK";
         string footer = "Font path from tyrian.shp";
@@ -52,7 +57,7 @@ public static class TitleScreenRenderer
         {
             MenuItemDefinition item = menu.Items[i];
             bool selected = i == menuState.SelectedIndex;
-            int y = 98 + (i * 16);
+            int y = MenuStartY + (i * MenuRowHeight);
             byte hue = item.IsEnabled ? (selected ? (byte)15 : (byte)13) : (byte)8;
             int value = item.IsEnabled ? (selected ? 4 : 1) : -2;
 
@@ -70,12 +75,37 @@ public static class TitleScreenRenderer
         fontRenderer.DrawDark(surface, 160, 182, menu.Footer, FontKind.Tiny, FontAlignment.Center, black: false);
     }
 
+    public static int? HitTestMenuItem(MenuDefinition menu, int x, int y)
+    {
+        if (menu.Items.Count == 0)
+        {
+            return null;
+        }
+
+        if (x < MenuCenterX - MenuHitHalfWidth || x > MenuCenterX + MenuHitHalfWidth)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < menu.Items.Count; i++)
+        {
+            int top = (MenuStartY + (i * MenuRowHeight)) - 6;
+            int bottom = top + 12;
+            if (y >= top && y <= bottom)
+            {
+                return i;
+            }
+        }
+
+        return null;
+    }
+
     private static void RenderFallback(IndexedFrameBuffer surface, double timeSeconds)
     {
         int width = surface.Width;
         int height = surface.Height;
         int phase = (int)(timeSeconds * 60.0);
-        Span<byte> pixels = surface.Pixels;
+        byte[] pixels = surface.Pixels;
 
         for (int y = 0; y < height; y++)
         {

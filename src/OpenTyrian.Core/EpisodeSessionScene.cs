@@ -15,8 +15,6 @@ public sealed class EpisodeSessionScene : IScene
     {
         bool cancelPressed = input.Cancel && !_previousInput.Cancel;
         bool confirmPressed = input.Confirm && !_previousInput.Confirm;
-        bool leftPressed = input.Left && !_previousInput.Left;
-        bool rightPressed = input.Right && !_previousInput.Right;
         bool downPressed = input.Down && !_previousInput.Down;
 
         if (downPressed && _sessionState.ShopCategories.Count > 0)
@@ -30,19 +28,9 @@ public sealed class EpisodeSessionScene : IScene
             _lastExecutionResult = EpisodeCommandInterpreter.ExecuteCurrentSection(_sessionState);
         }
 
-        if (leftPressed)
-        {
-            _sessionState.SetArcadeLikeMode(false);
-        }
-
-        if (rightPressed)
-        {
-            _sessionState.SetArcadeLikeMode(true);
-        }
-
         _previousInput = input;
 
-        return cancelPressed ? new EpisodeSelectScene() : null;
+        return cancelPressed ? new EpisodeSelectScene(_sessionState.StartMode) : null;
     }
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
@@ -72,7 +60,7 @@ public sealed class EpisodeSessionScene : IScene
             : "no recognized commands";
         resources.FontRenderer.DrawText(surface, 160, 212, $"section commands: {commandSummary}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 220, $"cube exists:{_sessionState.CubeExists} len:{_sessionState.CubeLength} markers:{_sessionState.CubeSectionMarkerCount}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 228, $"arcade-like mode: {_sessionState.IsArcadeLikeMode}  Left/Right toggle", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 228, $"mode: {_sessionState.StartMode.GetDisplayName()} players:{_sessionState.PlayerCount} arcadeLike:{_sessionState.IsArcadeLikeMode}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 236, $"saveLevel:{_sessionState.SaveLevel} lastLevelSave:{_sessionState.LastLevelSaveRequested}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         int firstItemRowCount = _sessionState.ItemAvailabilityMaxPerRow.Count > 0 ? _sessionState.ItemAvailabilityMaxPerRow[0] : 0;
         int firstItemValue = _sessionState.ItemAvailabilityRows.Count > 0 && _sessionState.ItemAvailabilityRows[0].Count > 0

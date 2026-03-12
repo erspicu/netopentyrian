@@ -6,6 +6,6 @@ public interface IVideoDevice
 {
     int Width { get; }
     int Height { get; }
-    Span<uint> LockFrame();
+    uint[] LockFrame();
     void Present();
 }

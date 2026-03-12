@@ -33,12 +33,12 @@ public static class ItemCatalogLoader
 
         data.Seek(WeaponRecordSize * WeaponCount, SeekOrigin.Current);
 
-        Dictionary<int, string> weaponPorts = ReadWeaponPorts(data);
-        Dictionary<int, string> specials = ReadSpecials(data);
-        Dictionary<int, string> generators = ReadGenerators(data);
-        Dictionary<int, string> ships = ReadShips(data);
-        Dictionary<int, string> options = ReadOptions(data);
-        Dictionary<int, string> shields = ReadShields(data);
+        Dictionary<int, ItemCatalogEntry> weaponPorts = ReadWeaponPorts(data);
+        Dictionary<int, ItemCatalogEntry> specials = ReadSpecials(data);
+        Dictionary<int, ItemCatalogEntry> generators = ReadGenerators(data);
+        Dictionary<int, ItemCatalogEntry> ships = ReadShips(data);
+        Dictionary<int, ItemCatalogEntry> options = ReadOptions(data);
+        Dictionary<int, ItemCatalogEntry> shields = ReadShields(data);
 
         return new ItemCatalog
         {
@@ -51,77 +51,91 @@ public static class ItemCatalogLoader
         };
     }
 
-    private static Dictionary<int, string> ReadWeaponPorts(TyrianDataStream data)
+    private static Dictionary<int, ItemCatalogEntry> ReadWeaponPorts(TyrianDataStream data)
     {
-        Dictionary<int, string> names = new(WeaponPortCount);
+        Dictionary<int, ItemCatalogEntry> items = new(WeaponPortCount);
         for (int i = 0; i < WeaponPortCount; i++)
         {
-            names[i] = ReadFixedName(data);
+            string name = ReadFixedName(data);
             data.ReadByte();
-            data.Seek(44 + 2 + 2 + 2, SeekOrigin.Current);
+            data.Seek(44, SeekOrigin.Current);
+            int cost = data.ReadUInt16();
+            data.Seek(2 + 2, SeekOrigin.Current);
+            items[i] = new ItemCatalogEntry(name, cost);
         }
 
-        return names;
+        return items;
     }
 
-    private static Dictionary<int, string> ReadSpecials(TyrianDataStream data)
+    private static Dictionary<int, ItemCatalogEntry> ReadSpecials(TyrianDataStream data)
     {
-        Dictionary<int, string> names = new(SpecialCount);
+        Dictionary<int, ItemCatalogEntry> items = new(SpecialCount);
         for (int i = 0; i < SpecialCount; i++)
         {
-            names[i] = ReadFixedName(data);
+            string name = ReadFixedName(data);
             data.Seek(2 + 1 + 1 + 2, SeekOrigin.Current);
+            items[i] = new ItemCatalogEntry(name, 0);
         }
 
-        return names;
+        return items;
     }
 
-    private static Dictionary<int, string> ReadGenerators(TyrianDataStream data)
+    private static Dictionary<int, ItemCatalogEntry> ReadGenerators(TyrianDataStream data)
     {
-        Dictionary<int, string> names = new(GeneratorCount);
+        Dictionary<int, ItemCatalogEntry> items = new(GeneratorCount);
         for (int i = 0; i < GeneratorCount; i++)
         {
-            names[i] = ReadFixedName(data);
-            data.Seek(2 + 1 + 1 + 2, SeekOrigin.Current);
+            string name = ReadFixedName(data);
+            data.Seek(2 + 1 + 1, SeekOrigin.Current);
+            int cost = data.ReadUInt16();
+            items[i] = new ItemCatalogEntry(name, cost);
         }
 
-        return names;
+        return items;
     }
 
-    private static Dictionary<int, string> ReadShips(TyrianDataStream data)
+    private static Dictionary<int, ItemCatalogEntry> ReadShips(TyrianDataStream data)
     {
-        Dictionary<int, string> names = new(ShipCount);
+        Dictionary<int, ItemCatalogEntry> items = new(ShipCount);
         for (int i = 0; i < ShipCount; i++)
         {
-            names[i] = ReadFixedName(data);
-            data.Seek(2 + 2 + 1 + 1 + 1 + 2 + 1, SeekOrigin.Current);
+            string name = ReadFixedName(data);
+            data.Seek(2 + 2 + 1 + 1 + 1, SeekOrigin.Current);
+            int cost = data.ReadUInt16();
+            data.Seek(1, SeekOrigin.Current);
+            items[i] = new ItemCatalogEntry(name, cost);
         }
 
-        return names;
+        return items;
     }
 
-    private static Dictionary<int, string> ReadOptions(TyrianDataStream data)
+    private static Dictionary<int, ItemCatalogEntry> ReadOptions(TyrianDataStream data)
     {
-        Dictionary<int, string> names = new(OptionCount);
+        Dictionary<int, ItemCatalogEntry> items = new(OptionCount);
         for (int i = 0; i < OptionCount; i++)
         {
-            names[i] = ReadFixedName(data);
-            data.Seek(1 + 2 + 2 + 1 + 1 + 1 + 1 + 40 + 1 + 2 + 1 + 1 + 1, SeekOrigin.Current);
+            string name = ReadFixedName(data);
+            data.Seek(1 + 2, SeekOrigin.Current);
+            int cost = data.ReadUInt16();
+            data.Seek(1 + 1 + 1 + 1 + 40 + 1 + 2 + 1 + 1 + 1, SeekOrigin.Current);
+            items[i] = new ItemCatalogEntry(name, cost);
         }
 
-        return names;
+        return items;
     }
 
-    private static Dictionary<int, string> ReadShields(TyrianDataStream data)
+    private static Dictionary<int, ItemCatalogEntry> ReadShields(TyrianDataStream data)
     {
-        Dictionary<int, string> names = new(ShieldCount);
+        Dictionary<int, ItemCatalogEntry> items = new(ShieldCount);
         for (int i = 0; i < ShieldCount; i++)
         {
-            names[i] = ReadFixedName(data);
-            data.Seek(1 + 1 + 2 + 2, SeekOrigin.Current);
+            string name = ReadFixedName(data);
+            data.Seek(1 + 1 + 2, SeekOrigin.Current);
+            int cost = data.ReadUInt16();
+            items[i] = new ItemCatalogEntry(name, cost);
         }
 
-        return names;
+        return items;
     }
 
     private static string ReadFixedName(TyrianDataStream data)

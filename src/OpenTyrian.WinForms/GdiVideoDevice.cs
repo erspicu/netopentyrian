@@ -24,7 +24,7 @@ internal sealed class GdiVideoDevice : IVideoDevice, IDisposable
         {
             bmiHeader = new BitmapInfoHeader
             {
-                biSize = (uint)Marshal.SizeOf<BitmapInfoHeader>(),
+                biSize = (uint)Marshal.SizeOf(typeof(BitmapInfoHeader)),
                 biWidth = width,
                 biHeight = -height,
                 biPlanes = 1,
@@ -40,23 +40,45 @@ internal sealed class GdiVideoDevice : IVideoDevice, IDisposable
 
     public int Height { get; }
 
-    public Span<uint> LockFrame()
+    public uint[] LockFrame()
     {
         return _pixels;
     }
 
+    public bool TryMapClientPointToFrame(Point clientPoint, out Point framePoint)
+    {
+        framePoint = Point.Empty;
+
+        if (!TryGetPresentationBounds(out int scale, out int offsetX, out int offsetY, out int drawWidth, out int drawHeight))
+        {
+            return false;
+        }
+
+        if (clientPoint.X < offsetX ||
+            clientPoint.Y < offsetY ||
+            clientPoint.X >= offsetX + drawWidth ||
+            clientPoint.Y >= offsetY + drawHeight)
+        {
+            return false;
+        }
+
+        int frameX = (clientPoint.X - offsetX) / scale;
+        int frameY = (clientPoint.Y - offsetY) / scale;
+        framePoint = new Point(Math.Min(Width - 1, Math.Max(0, frameX)), Math.Min(Height - 1, Math.Max(0, frameY)));
+        return true;
+    }
+
     public void Present()
     {
-        if (_disposed || !_target.IsHandleCreated || _target.Width <= 0 || _target.Height <= 0)
+        if (_disposed || !_target.IsHandleCreated)
         {
             return;
         }
 
-        int scale = Math.Max(1, Math.Min(_target.ClientSize.Width / Width, _target.ClientSize.Height / Height));
-        int drawWidth = Width * scale;
-        int drawHeight = Height * scale;
-        int offsetX = (_target.ClientSize.Width - drawWidth) / 2;
-        int offsetY = (_target.ClientSize.Height - drawHeight) / 2;
+        if (!TryGetPresentationBounds(out int scale, out int offsetX, out int offsetY, out int drawWidth, out int drawHeight))
+        {
+            return;
+        }
 
         using Graphics graphics = _target.CreateGraphics();
         graphics.Clear(Color.Black);
@@ -85,6 +107,27 @@ internal sealed class GdiVideoDevice : IVideoDevice, IDisposable
         {
             graphics.ReleaseHdc(hdc);
         }
+    }
+
+    private bool TryGetPresentationBounds(out int scale, out int offsetX, out int offsetY, out int drawWidth, out int drawHeight)
+    {
+        scale = 0;
+        offsetX = 0;
+        offsetY = 0;
+        drawWidth = 0;
+        drawHeight = 0;
+
+        if (_disposed || _target.Width <= 0 || _target.Height <= 0)
+        {
+            return false;
+        }
+
+        scale = Math.Max(1, Math.Min(_target.ClientSize.Width / Width, _target.ClientSize.Height / Height));
+        drawWidth = Width * scale;
+        drawHeight = Height * scale;
+        offsetX = (_target.ClientSize.Width - drawWidth) / 2;
+        offsetY = (_target.ClientSize.Height - drawHeight) / 2;
+        return true;
     }
 
     public void Dispose()

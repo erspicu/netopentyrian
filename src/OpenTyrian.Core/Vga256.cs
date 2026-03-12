@@ -79,7 +79,7 @@ public static class Vga256
             return;
         }
 
-        Span<byte> pixels = surface.Pixels;
+        byte[] pixels = surface.Pixels;
         for (int y = y1; y <= y2; y++)
         {
             int rowOffset = y * surface.Width;
@@ -100,7 +100,7 @@ public static class Vga256
             return;
         }
 
-        Span<byte> pixels = surface.Pixels;
+        byte[] pixels = surface.Pixels;
         for (int y = y1; y <= y2; y++)
         {
             int rowOffset = y * surface.Width;
@@ -122,19 +122,27 @@ public static class Vga256
     private static void FillHorizontal(IndexedFrameBuffer surface, int x1, int x2, int y, byte colorIndex)
     {
         int rowOffset = y * surface.Width;
-        surface.Pixels.Slice(rowOffset + x1, x2 - x1 + 1).Fill(colorIndex);
+        byte[] pixels = surface.Pixels;
+        for (int x = rowOffset + x1; x <= rowOffset + x2; x++)
+        {
+            pixels[x] = colorIndex;
+        }
     }
 
     private static void NormalizeRectangle(ref int x1, ref int y1, ref int x2, ref int y2)
     {
         if (x1 > x2)
         {
-            (x1, x2) = (x2, x1);
+            int temp = x1;
+            x1 = x2;
+            x2 = temp;
         }
 
         if (y1 > y2)
         {
-            (y1, y2) = (y2, y1);
+            int temp = y1;
+            y1 = y2;
+            y2 = temp;
         }
     }
 

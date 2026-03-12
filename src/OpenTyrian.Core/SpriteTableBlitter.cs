@@ -71,8 +71,8 @@ public static class SpriteTableBlitter
         SpriteFrame frame,
         Func<byte, byte, byte> pixelTransform)
     {
-        ReadOnlySpan<byte> data = frame.Data;
-        Span<byte> pixels = surface.Pixels;
+        byte[] data = frame.Data;
+        byte[] pixels = surface.Pixels;
 
         int x = 0;
         int y = 0;

@@ -23,15 +23,17 @@ public static class TyrianDataDirectoryResolver
 
     private static IEnumerable<string> GetCandidates(string? preferredDirectory)
     {
+        string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
         if (!string.IsNullOrWhiteSpace(preferredDirectory))
         {
-            yield return preferredDirectory;
+            yield return preferredDirectory ?? string.Empty;
         }
 
-        yield return Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "tyrian21");
-        yield return Path.Combine(AppContext.BaseDirectory, "tyrian21");
-        yield return Path.Combine(AppContext.BaseDirectory, "data");
-        yield return AppContext.BaseDirectory;
+        yield return Path.Combine(baseDirectory, "..", "..", "..", "..", "tyrian21");
+        yield return Path.Combine(baseDirectory, "tyrian21");
+        yield return Path.Combine(baseDirectory, "data");
+        yield return baseDirectory;
         yield return Directory.GetCurrentDirectory();
     }
 }

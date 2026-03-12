@@ -10,5 +10,5 @@ public sealed class EpisodeScriptInfo
 
     public required int SectionMarkerCount { get; init; }
 
-    public required IReadOnlyList<EpisodeSectionInfo> Sections { get; init; }
+    public required IList<EpisodeSectionInfo> Sections { get; init; }
 }

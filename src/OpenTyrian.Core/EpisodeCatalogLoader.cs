@@ -4,9 +4,9 @@ namespace OpenTyrian.Core;
 
 public static class EpisodeCatalogLoader
 {
-    public static IReadOnlyList<EpisodeInfo> Load(IAssetLocator assetLocator)
+    public static IList<EpisodeInfo> Load(IAssetLocator assetLocator)
     {
-        IReadOnlyList<string> episodeTitles = LoadEpisodeTitles(assetLocator);
+        IList<string> episodeTitles = LoadEpisodeTitles(assetLocator);
         List<EpisodeInfo> episodes = new(episodeTitles.Count);
 
         for (int i = 0; i < episodeTitles.Count; i++)
@@ -49,7 +49,7 @@ public static class EpisodeCatalogLoader
         return episodes;
     }
 
-    private static IReadOnlyList<string> LoadEpisodeTitles(IAssetLocator assetLocator)
+    private static IList<string> LoadEpisodeTitles(IAssetLocator assetLocator)
     {
         if (!assetLocator.FileExists("tyrian.hdt"))
         {

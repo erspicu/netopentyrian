@@ -53,30 +53,34 @@ public sealed class PicArchive
             throw new InvalidDataException($"Invalid picture span for picture {pictureNumber}.");
         }
 
-        byte[] output = DecodeRle(_data.AsSpan(start, size), 320 * 200);
+        byte[] output = DecodeRle(_data, start, size, 320 * 200);
         return new PicImage(320, 200, output, PicPaletteMap[index]);
     }
 
-    private static byte[] DecodeRle(ReadOnlySpan<byte> encoded, int outputSize)
+    private static byte[] DecodeRle(byte[] encoded, int offset, int length, int outputSize)
     {
         byte[] output = new byte[outputSize];
-        int src = 0;
+        int src = offset;
+        int end = offset + length;
         int dst = 0;
 
-        while (src < encoded.Length && dst < output.Length)
+        while (src < end && dst < output.Length)
         {
             byte value = encoded[src++];
             if ((value & 0xC0) == 0xC0)
             {
                 int runLength = value & 0x3F;
-                if (src >= encoded.Length)
+                if (src >= end)
                 {
                     throw new InvalidDataException("Invalid RLE stream in tyrian.pic.");
                 }
 
                 byte runValue = encoded[src++];
-                output.AsSpan(dst, runLength).Fill(runValue);
-                dst += runLength;
+                int count = Math.Min(runLength, output.Length - dst);
+                for (int i = 0; i < count; i++)
+                {
+                    output[dst++] = runValue;
+                }
             }
             else
             {

@@ -15,7 +15,7 @@ public sealed class GameHost
     private Sprite2Sheet? _testSpriteSheet;
     private MainShapeTables? _mainShapeTables;
     private TyrianFontRenderer? _fontRenderer;
-    private IReadOnlyList<EpisodeInfo> _episodes = Array.Empty<EpisodeInfo>();
+    private IList<EpisodeInfo> _episodes = new EpisodeInfo[0];
     private GameplayTextInfo? _gameplayText;
     private ItemCatalog? _itemCatalog;
 
@@ -95,8 +95,8 @@ public sealed class GameHost
 
     private void RenderFallbackArgb()
     {
-        Span<byte> source = IndexedFrameBuffer.Pixels;
-        Span<uint> destination = FrameBuffer.Pixels;
+        byte[] source = IndexedFrameBuffer.Pixels;
+        uint[] destination = FrameBuffer.Pixels;
 
         for (int i = 0; i < source.Length; i++)
         {

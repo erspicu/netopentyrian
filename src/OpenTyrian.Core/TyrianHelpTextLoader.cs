@@ -86,7 +86,7 @@ public static class TyrianHelpTextLoader
         return System.Text.Encoding.ASCII.GetString(buffer);
     }
 
-    private static void Decrypt(Span<byte> buffer)
+    private static void Decrypt(byte[] buffer)
     {
         for (int i = buffer.Length - 1; i >= 0; i--)
         {

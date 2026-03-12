@@ -8,5 +8,5 @@ public sealed class EpisodeSectionInfo
 
     public required long FileOffset { get; init; }
 
-    public required IReadOnlyList<EpisodeCommandInfo> Commands { get; init; }
+    public required IList<EpisodeCommandInfo> Commands { get; init; }
 }

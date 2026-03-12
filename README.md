@@ -1,40 +1,42 @@
 # netopentyrian
 
-`netopentyrian` 是將 [OpenTyrian](https://github.com/opentyrian/opentyrian) 移植到 `C# / .NET 10 / Windows Forms` 的實驗性專案。
+`netopentyrian` 是將 [OpenTyrian](https://github.com/opentyrian/opentyrian) 移植到 `C# / .NET Framework 4.0 / Windows Forms` 的實驗性專案。
 
-目前目標不是直接包一層 SDL，而是把遊戲邏輯核心和平台層切開，讓後續除了 WinForms/Win32 之外，也能替換成其他平台實作。
+目前目標不是直接包一層 SDL，而是把遊戲邏輯核心和平台層切開，讓後續除了 WinForms/Win32 之外，也能替換成其他平台實作。現階段優先使用 `.NET Framework 4.0` 可直接提供的 BCL，避免額外安裝套件。
 
 ## 專案目標
 
 - 以 `Windows Forms` 建立視窗與宿主程式
 - 以 `Panel + Win32 GDI` 輸出遊戲畫面
 - 不使用第三方 library
+- 不額外依賴 `System.Memory`、`System.Buffers` 等外掛套件
 - 鍵盤、滑鼠、手把、音效盡量使用 .NET 內建或 Win32 API
 - 將平台層與遊戲核心切割，方便日後移植
 - 執行時使用 `tyrian21` 內的原始遊戲資料
+- network 功能維持停用，不再納入移植範圍
 
 ## 目前目錄
 
-- [`opentyrian-master`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/opentyrian-master)
+- `opentyrian-master`
   OpenTyrian 上游原始碼
-- [`tyrian21`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/tyrian21)
+- `tyrian21`
   執行時使用的 Tyrian 2.1 資料檔
-- [`tool`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/tool)
+- `tool`
   現有 Win32 / GDI / 輸入 / 音效工具碼
-- [`src/OpenTyrian.Core`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/src/OpenTyrian.Core)
+- `src/OpenTyrian.Core`
   遊戲核心、資源格式、scene、session、script parsing
-- [`src/OpenTyrian.Platform`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/src/OpenTyrian.Platform)
+- `src/OpenTyrian.Platform`
   平台抽象介面
-- [`src/OpenTyrian.WinForms`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/src/OpenTyrian.WinForms)
+- `src/OpenTyrian.WinForms`
   WinForms 宿主與 GDI/輸入接線
-- [`MD/TODO.MD`](/C:/Users/2026010501/Desktop/ai_project/.net_opentyrian/MD/TODO.MD)
+- `MD/TODO.MD`
   分階段移植紀錄
 
 ## 目前進度
 
 目前已完成或已打通的部分包含：
 
-- `.NET 10` solution 與分層骨架
+- `.NET Framework 4.0` solution 與分層骨架
 - WinForms `Panel` + Win32 GDI framebuffer 輸出
 - `palette.dat`、`tyrian.pic`、`PCX`、`Sprite2`、`tyrian.shp` 字型與主 shape table 載入
 - title / main menu / episode select / episode session scene 骨架
@@ -42,15 +44,23 @@
 - `.lvl` header、`levelsX.dat` section 與部分 command parsing/interpreter
 - `]I` item availability 解析
 - upgrade/shop prototype 與最小 `PlayerLoadoutState`
+- WinForms 滑鼠座標/按鍵已接入，main menu 與 episode select 可用滑鼠 hover/click
+- `1P Full Game`、`1P Arcade`、`2P Arcade` 已會帶著對應模式進入 episode select / session
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 
 ## 建置方式
 
-目前這個工作環境使用 Visual Studio 的 `MSBuild.exe` 建置最穩定：
+目前這個工作環境使用 Visual Studio 的 `MSBuild.exe` 建置最穩定。優先直接用根目錄的 `build.ps1`，它會自動偵測常見 Visual Studio / Build Tools 安裝位置，並先 restore 再 build：
 
 ```powershell
-& 'C:\Program Files\Microsoft Visual Studio\18\Insiders\MSBuild\Current\Bin\MSBuild.exe' OpenTyrianDotNet.sln /t:Build /p:Configuration=Debug /m:1 /v:minimal
+.\build.ps1 -Configuration Debug
+```
+
+若要手動指定路徑，也可以直接呼叫 `MSBuild.exe`：
+
+```powershell
+& 'C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' OpenTyrianDotNet.sln /restore /t:Build /p:Configuration=Debug /p:RestoreIgnoreFailedSources=true /m:1 /v:minimal
 ```
 
 此環境下 `dotnet build` 對 WinForms workload resolver 有問題，所以暫時不把它當主要入口。
@@ -73,4 +83,4 @@
 - 繼續把 `game_menu.c`、`mainint.c`、`episodes.c` 的主流程往 C# scene / state 模型對齊
 - 補完整輸入層、音效層與更多 episode script command
 - 將 upgrade/shop prototype 往真正可用的玩家裝備與主選單流程推進
-
+- network 對應流程維持停用，不再規劃 `network.c`

@@ -2,15 +2,15 @@ namespace OpenTyrian.Core;
 
 public static class PaletteRenderer
 {
-    public static void Render(IndexedFrameBuffer source, ReadOnlySpan<PaletteColor> palette, ArgbFrameBuffer destination)
+    public static void Render(IndexedFrameBuffer source, PaletteColor[] palette, ArgbFrameBuffer destination)
     {
         if (source.Width != destination.Width || source.Height != destination.Height)
         {
             throw new ArgumentException("Source and destination framebuffer sizes must match.");
         }
 
-        Span<byte> src = source.Pixels;
-        Span<uint> dst = destination.Pixels;
+        byte[] src = source.Pixels;
+        uint[] dst = destination.Pixels;
 
         for (int i = 0; i < src.Length; i++)
         {

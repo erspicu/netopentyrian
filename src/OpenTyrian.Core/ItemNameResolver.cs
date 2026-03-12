@@ -37,7 +37,12 @@ public static class ItemNameResolver
         }
 
         string? catalogName = catalog?.GetName(kind, itemId);
-        return !string.IsNullOrWhiteSpace(catalogName) ? catalogName : $"{GetCategoryCompactName(kind)} {itemId}";
+        if (!string.IsNullOrWhiteSpace(catalogName))
+        {
+            return catalogName ?? string.Empty;
+        }
+
+        return $"{GetCategoryCompactName(kind)} {itemId}";
     }
 
     private static string GetCategoryDisplayName(ItemCategoryKind kind)
