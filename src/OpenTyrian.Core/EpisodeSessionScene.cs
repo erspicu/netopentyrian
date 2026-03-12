@@ -15,7 +15,14 @@ public sealed class EpisodeSessionScene : IScene
     {
         bool cancelPressed = input.Cancel && !_previousInput.Cancel;
         bool confirmPressed = input.Confirm && !_previousInput.Confirm;
+        bool upPressed = input.Up && !_previousInput.Up;
         bool downPressed = input.Down && !_previousInput.Down;
+
+        if (upPressed && _sessionState.CubeEntries.Count > 0)
+        {
+            _previousInput = input;
+            return new DataCubeScene(_sessionState);
+        }
 
         if (downPressed && _sessionState.ShopCategories.Count > 0)
         {
@@ -59,7 +66,7 @@ public sealed class EpisodeSessionScene : IScene
             ? $"{entry.Commands[0].Kind} ({entry.Commands.Count} cmds)"
             : "no recognized commands";
         resources.FontRenderer.DrawText(surface, 160, 212, $"section commands: {commandSummary}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 220, $"cube exists:{_sessionState.CubeExists} len:{_sessionState.CubeLength} markers:{_sessionState.CubeSectionMarkerCount}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 220, $"cube exists:{_sessionState.CubeExists} len:{_sessionState.CubeLength} markers:{_sessionState.CubeSectionMarkerCount} entries:{_sessionState.CubeEntries.Count}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 228, $"mode: {_sessionState.StartMode.GetDisplayName()} players:{_sessionState.PlayerCount} arcadeLike:{_sessionState.IsArcadeLikeMode}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 236, $"cash:{_sessionState.Cash} assets:{_sessionState.GetTotalAssetValue(resources.ItemCatalog)} total:{_sessionState.GetTotalScore(resources.ItemCatalog)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         int firstItemRowCount = _sessionState.ItemAvailabilityMaxPerRow.Count > 0 ? _sessionState.ItemAvailabilityMaxPerRow[0] : 0;
@@ -74,7 +81,7 @@ public sealed class EpisodeSessionScene : IScene
         resources.FontRenderer.DrawText(surface, 160, 260, $"loadout {_sessionState.PlayerLoadout.BuildSummary()}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 268, $"fadeBlack:{_sessionState.FadeBlackRequested} netSync:{_sessionState.NetworkTextSyncRequested}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 276, $"last exec: cmds={_lastExecutionResult.ExecutedCommands} changed={_lastExecutionResult.StateChanged} jumped={_lastExecutionResult.Jumped}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 284, "Enter runs section commands  Down opens upgrade shop", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 284, "Enter runs section commands  Up data cubes  Down upgrade shop", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawDark(surface, 160, 292, $"bonus:{_sessionState.BonusLevel} repeat:{_sessionState.GameHasRepeated} jumpBack:{_sessionState.JumpBackToEpisode1}", FontKind.Tiny, FontAlignment.Center, black: false);
     }
 }

@@ -9,4 +9,6 @@ public sealed class CubeTextInfo
     public required int PreviewStringCount { get; init; }
 
     public required int SectionMarkerCount { get; init; }
+
+    public required IList<CubeTextEntry> Entries { get; init; }
 }

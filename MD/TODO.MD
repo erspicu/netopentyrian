@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
-總完成度(估算): 約 48%
+總完成度(估算): 約 50%
 
 ## 目標
 
@@ -457,3 +457,5 @@
 - `EpisodeSessionState` 現在已加入 episode/mode 對應的初始 cash，並會追蹤即時 cash、裝備總價值與 total score
 - `UpgradeMenuScene` 現在會依 trade-in value 計算 category budget，提交裝備時真的扣款/退款，買不起時會阻止 commit
 - 商店清單現在會把買不起的項目以較暗樣式顯示，front/rear weapon 升 power 也會檢查 affordability
+- `CubeTextLoader` 現在不只做 metadata 掃描，已會把 `cubetxtX.dat` 解析成結構化 data cube entry 清單
+- 已新增 `DataCubeScene`，`EpisodeSessionScene` 現在可用 `Up` 進入 data cube viewer，並支援左右切 entry、上下捲動內容

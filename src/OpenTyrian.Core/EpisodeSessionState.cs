@@ -32,6 +32,7 @@ public sealed class EpisodeSessionState
         CubeLength = startInfo.CubeInfo?.Length ?? 0;
         CubePreviewStringCount = startInfo.CubeInfo?.PreviewStringCount ?? 0;
         CubeSectionMarkerCount = startInfo.CubeInfo?.SectionMarkerCount ?? 0;
+        CubeEntries = startInfo.CubeInfo?.Entries ?? new CubeTextEntry[0];
         PlayerCount = startMode.GetPlayerCount();
         IsArcadeLikeMode = startMode.IsArcadeLike();
         InitialCash = GetInitialCash(startInfo.EpisodeNumber, startMode);
@@ -101,6 +102,8 @@ public sealed class EpisodeSessionState
     public int CubePreviewStringCount { get; }
 
     public int CubeSectionMarkerCount { get; }
+
+    public IList<CubeTextEntry> CubeEntries { get; }
 
     public int PlayerCount { get; }
 

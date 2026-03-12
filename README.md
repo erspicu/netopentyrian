@@ -47,6 +47,7 @@
 - WinForms 滑鼠座標/按鍵已接入，main menu 與 episode select 可用滑鼠 hover/click
 - `1P Full Game`、`1P Arcade`、`2P Arcade` 已會帶著對應模式進入 episode select / session
 - shop 現在已追蹤 `cash / trade-in / affordability`，提交裝備會真正扣款或退款
+- `cubetxtX.dat` 已結構化為 data cube entry，episode session 可進入 data cube viewer
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 
