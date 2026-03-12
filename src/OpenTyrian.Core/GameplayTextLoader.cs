@@ -25,6 +25,16 @@ public static class GameplayTextLoader
                     "Local two-player arcade mode.",
                     "Network mode is not wired yet.",
                 ],
+                FullGameMenu =
+                [
+                    "Full Game",
+                    "Data Cubes",
+                    "Ship Specs",
+                    "Upgrade Ship",
+                    "Options",
+                    "Next Level",
+                    "Quit",
+                ],
             };
         }
 
@@ -35,6 +45,7 @@ public static class GameplayTextLoader
         {
             GameplayNames = catalog.GameplayNames,
             MainMenuHelp = catalog.MainMenuHelp,
+            FullGameMenu = catalog.FullGameMenu,
         };
     }
 }

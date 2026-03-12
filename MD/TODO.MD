@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
-總完成度(估算): 約 52%
+總完成度(估算): 約 55%
 
 ## 目標
 
@@ -463,3 +463,8 @@
 - `EpisodeSessionState` 已加入每個 main level 的 auto-execute 記錄，從 shop / data cube 返回同一 section 時不會重複觸發自動腳本
 - `UpgradeMenuScene` 已補上滑鼠 hover/click 與右鍵返回，現在可直接點分類、點 item、點 `Done` 提交，讓輸入層與主流程 prototype 更接近實際選單操作
 - `]S` network text sync 目前仍會被 parser 識別，但 interpreter 會明確忽略，維持 network 功能停用的移植方針
+- `EpisodeSelectScene` 現在不再直接掉進 debug session，而是會進入新的 `FullGameMenuScene`，形成第一個貼近上游 `MENU_FULL_GAME` 的 hub
+- 已新增 `FullGameMenuScene`，目前可從 hub 進入 data cube、upgrade shop、next-level 選單、session debug view，並沿用現有滑鼠 hover/click 輸入路徑
+- 已新增 `LevelSelectScene`，可瀏覽目前 episode 解析出的 `main level` section 清單，選定後會切換 `CurrentLevelNumber` 並在返回 hub 時自動執行新 section command
+- 已新增 `EpisodePendingCommandRunner`，把 section auto-execute 從 debug scene 抽成可共用流程，讓 full-game hub 與 session debug 共用同一套 command handoff 邏輯
+- `TyrianHelpTextLoader` / `GameplayTextLoader` 已開始額外讀取 `tyrian.hdt` 的 `menuInt[1]`，full-game hub 會優先使用真實遊戲 full-game menu 文字

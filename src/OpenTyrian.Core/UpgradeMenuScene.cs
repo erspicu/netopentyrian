@@ -19,6 +19,7 @@ public sealed class UpgradeMenuScene : IScene
     }
 
     private readonly EpisodeSessionState _sessionState;
+    private readonly bool _returnToFullGameMenu;
     private readonly int[] _selectedSlots;
     private readonly int[] _preparedItemIds;
     private readonly int[] _preparedWeaponPowers;
@@ -28,9 +29,10 @@ public sealed class UpgradeMenuScene : IScene
     private string _statusText;
     private UpgradeMenuMode _mode;
 
-    public UpgradeMenuScene(EpisodeSessionState sessionState)
+    public UpgradeMenuScene(EpisodeSessionState sessionState, bool returnToFullGameMenu = false)
     {
         _sessionState = sessionState;
+        _returnToFullGameMenu = returnToFullGameMenu;
         _selectedSlots = new int[Math.Max(1, sessionState.ShopCategories.Count)];
         _preparedItemIds = new int[Math.Max(1, sessionState.ShopCategories.Count)];
         _preparedWeaponPowers = new int[Math.Max(1, sessionState.ShopCategories.Count)];
@@ -87,7 +89,7 @@ public sealed class UpgradeMenuScene : IScene
             }
 
             _previousInput = input;
-            return new EpisodeSessionScene(_sessionState);
+            return CreateReturnScene();
         }
 
         if (_sessionState.ShopCategories.Count == 0)
@@ -201,7 +203,7 @@ public sealed class UpgradeMenuScene : IScene
                     if (category is null)
                     {
                         _previousInput = input;
-                        return new EpisodeSessionScene(_sessionState);
+                        return CreateReturnScene();
                     }
 
                     SyncSelectedSlotToPrepared(category);
@@ -652,6 +654,13 @@ public sealed class UpgradeMenuScene : IScene
 
         int maxStart = totalRows - visibleCount;
         return Math.Min(preferredStart, maxStart);
+    }
+
+    private IScene CreateReturnScene()
+    {
+        return _returnToFullGameMenu
+            ? new FullGameMenuScene(_sessionState)
+            : new EpisodeSessionScene(_sessionState);
     }
 
     private string BuildFooterText()

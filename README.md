@@ -51,6 +51,10 @@
 - episode session 現在會在進場時自動執行當前 section command，遇到 `]I` 會直接轉進 upgrade/shop scene
 - upgrade/shop scene 已支援滑鼠 hover/click 與右鍵返回，和目前 WinForms 輸入層對齊
 - `]S` network text sync 仍會被解析，但執行時明確忽略，network 流程維持停用
+- episode 選擇之後現在會進入 `FullGameMenuScene`，形成第一個比較接近 `MENU_FULL_GAME` 的 hub
+- full-game hub 可進入 data cube、upgrade shop、next-level 選單與 session debug view，並支援滑鼠 hover/click
+- `tyrian.hdt` 已額外接入 full-game menu 的 `menuInt[1]` 文字，減少這一段流程的硬編碼
+- 已新增最小 `LevelSelectScene`，可瀏覽 parsed main-level section 並切換目前 level，返回 hub 後會自動執行新 section command
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 
@@ -87,5 +91,5 @@
 
 - 繼續把 `game_menu.c`、`mainint.c`、`episodes.c` 的主流程往 C# scene / state 模型對齊
 - 補完整輸入層、音效層與更多 episode script command
-- 將 upgrade/shop prototype 往真正可用的玩家裝備與主選單流程推進
+- 將 full-game hub、upgrade/shop、next-level、ship specs 再往上游互動對齊
 - network 對應流程維持停用，不再規劃 `network.c`

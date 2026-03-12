@@ -60,7 +60,7 @@ public sealed class EpisodeSelectScene : IScene
             if (selectedEpisode is not null)
             {
                 EpisodeSessionState sessionState = new(selectedEpisode.StartInfo, _startMode);
-                return new EpisodeSessionScene(sessionState);
+                return new FullGameMenuScene(sessionState);
             }
         }
 

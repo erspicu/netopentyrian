@@ -9,13 +9,15 @@ public sealed class DataCubeScene : IScene
     private const int VisibleContentLines = 9;
 
     private readonly EpisodeSessionState _sessionState;
+    private readonly bool _returnToFullGameMenu;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _selectedEntryIndex;
     private int _scrollOffset;
 
-    public DataCubeScene(EpisodeSessionState sessionState)
+    public DataCubeScene(EpisodeSessionState sessionState, bool returnToFullGameMenu = false)
     {
         _sessionState = sessionState;
+        _returnToFullGameMenu = returnToFullGameMenu;
         _selectedEntryIndex = 0;
         _scrollOffset = 0;
     }
@@ -31,7 +33,9 @@ public sealed class DataCubeScene : IScene
         if (cancelPressed)
         {
             _previousInput = input;
-            return new EpisodeSessionScene(_sessionState);
+            return _returnToFullGameMenu
+                ? new FullGameMenuScene(_sessionState)
+                : new EpisodeSessionScene(_sessionState);
         }
 
         if (_sessionState.CubeEntries.Count > 0)

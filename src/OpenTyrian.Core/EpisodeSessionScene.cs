@@ -2,15 +2,15 @@ namespace OpenTyrian.Core;
 
 public sealed class EpisodeSessionScene : IScene
 {
-    private const int MaxAutoExecutionPasses = 32;
-
     private readonly EpisodeSessionState _sessionState;
+    private readonly bool _returnToFullGameMenu;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private EpisodeCommandExecutionResult _lastExecutionResult;
 
-    public EpisodeSessionScene(EpisodeSessionState sessionState)
+    public EpisodeSessionScene(EpisodeSessionState sessionState, bool returnToFullGameMenu = false)
     {
         _sessionState = sessionState;
+        _returnToFullGameMenu = returnToFullGameMenu;
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
@@ -20,22 +20,28 @@ public sealed class EpisodeSessionScene : IScene
         bool upPressed = input.Up && !_previousInput.Up;
         bool downPressed = input.Down && !_previousInput.Down;
 
-        IScene? autoScene = TryAutoExecuteCurrentSection(input);
-        if (autoScene is not null)
+        EpisodeCommandExecutionResult autoExecutionResult = EpisodePendingCommandRunner.ExecutePending(_sessionState);
+        if (autoExecutionResult.ExecutedCommands > 0)
         {
-            return autoScene;
+            _lastExecutionResult = autoExecutionResult;
+        }
+
+        if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
+        {
+            _previousInput = input;
+            return new UpgradeMenuScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
         }
 
         if (upPressed && _sessionState.CubeEntries.Count > 0)
         {
             _previousInput = input;
-            return new DataCubeScene(_sessionState);
+            return new DataCubeScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
         }
 
         if (downPressed && _sessionState.ShopCategories.Count > 0)
         {
             _previousInput = input;
-            return new UpgradeMenuScene(_sessionState);
+            return new UpgradeMenuScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
         }
 
         if (confirmPressed)
@@ -44,19 +50,20 @@ public sealed class EpisodeSessionScene : IScene
             if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
             {
                 _previousInput = input;
-                return new UpgradeMenuScene(_sessionState);
-            }
-
-            IScene? chainedAutoScene = TryAutoExecuteCurrentSection(input);
-            if (chainedAutoScene is not null)
-            {
-                return chainedAutoScene;
+                return new UpgradeMenuScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
             }
         }
 
         _previousInput = input;
 
-        return cancelPressed ? new EpisodeSelectScene(_sessionState.StartMode) : null;
+        if (cancelPressed)
+        {
+            return _returnToFullGameMenu
+                ? new FullGameMenuScene(_sessionState)
+                : new EpisodeSelectScene(_sessionState.StartMode);
+        }
+
+        return null;
     }
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
@@ -102,29 +109,5 @@ public sealed class EpisodeSessionScene : IScene
         resources.FontRenderer.DrawText(surface, 160, 276, $"last exec: cmds={_lastExecutionResult.ExecutedCommands} changed={_lastExecutionResult.StateChanged} jumped={_lastExecutionResult.Jumped} shop={_lastExecutionResult.ShopRequested}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 284, "Section commands auto-run on entry  Enter reruns  Up cubes  Down shop", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawDark(surface, 160, 292, $"bonus:{_sessionState.BonusLevel} repeat:{_sessionState.GameHasRepeated} jumpBack:{_sessionState.JumpBackToEpisode1}", FontKind.Tiny, FontAlignment.Center, black: false);
-    }
-
-    private IScene? TryAutoExecuteCurrentSection(OpenTyrian.Platform.InputSnapshot input)
-    {
-        int autoExecutionPasses = 0;
-        while (_sessionState.ShouldAutoExecuteCurrentMainLevel() && autoExecutionPasses < MaxAutoExecutionPasses)
-        {
-            autoExecutionPasses++;
-            _sessionState.MarkCurrentMainLevelAutoExecuted();
-            _lastExecutionResult = EpisodeCommandInterpreter.ExecuteCurrentSection(_sessionState);
-
-            if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
-            {
-                _previousInput = input;
-                return new UpgradeMenuScene(_sessionState);
-            }
-
-            if (!_lastExecutionResult.Jumped)
-            {
-                break;
-            }
-        }
-
-        return null;
     }
 }
