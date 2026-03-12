@@ -1,8 +1,18 @@
 namespace OpenTyrian.Core;
 
-public sealed class TitleScene : IScene
+public sealed class TitleScene : IScene, IScenePresentation
 {
     private OpenTyrian.Platform.InputSnapshot _previousInput;
+
+    public int? BackgroundPictureNumber
+    {
+        get { return 4; }
+    }
+
+    public SceneMusicKind? MusicOverride
+    {
+        get { return SceneMusicKind.Title; }
+    }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
     {
@@ -14,7 +24,7 @@ public sealed class TitleScene : IScene
         {
             SceneAudio.PlayConfirm(resources);
             _previousInput = input;
-            return new MainMenuScene();
+            return new TitleMenuScene();
         }
 
         _previousInput = input;
@@ -23,13 +33,12 @@ public sealed class TitleScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 4, includeOverlays: false);
         resources.FontRenderer?.DrawShadowText(
             surface,
             160,
             150,
-            "Press ~Enter~ or click to open menu",
+            "Press ~Enter~ or click to open title menu",
             FontKind.Tiny,
             FontAlignment.Center,
             12,

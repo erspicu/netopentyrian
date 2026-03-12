@@ -1,9 +1,19 @@
 namespace OpenTyrian.Core;
 
-public sealed class MainMenuScene : IScene
+public sealed class MainMenuScene : IScene, IScenePresentation
 {
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private MenuState? _menuState;
+
+    public int? BackgroundPictureNumber
+    {
+        get { return 2; }
+    }
+
+    public SceneMusicKind? MusicOverride
+    {
+        get { return SceneMusicKind.Menu; }
+    }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
     {
@@ -39,7 +49,7 @@ public sealed class MainMenuScene : IScene
         {
             SceneAudio.PlayCancel(resources);
             _previousInput = input;
-            return new TitleScene();
+            return new TitleMenuScene();
         }
 
         if (upPressed)
@@ -69,8 +79,7 @@ public sealed class MainMenuScene : IScene
     {
         MenuDefinition definition = CreateDefinition(resources.GameplayText);
         EnsureMenuState(definition);
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
         if (_menuState is not null)
         {
             TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);

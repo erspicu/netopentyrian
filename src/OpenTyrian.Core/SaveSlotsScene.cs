@@ -1,25 +1,50 @@
 namespace OpenTyrian.Core;
 
-public sealed class SaveSlotsScene : IScene
+public sealed class SaveSlotsScene : IScene, IScenePresentation
 {
     private const int MaxSaveNameLength = 14;
+    private const int HeaderCenterX = 160;
+    private const int HeaderY = 5;
+    private const int RowStartY = 30;
+    private const int RowHeight = 13;
+    private const int RowHitHeight = 8;
+    private const int NameColumnX = 10;
+    private const int LastLevelColumnX = 120;
+    private const int EpisodeColumnX = 250;
+    private const int FooterY = 190;
+    private const int NoticeY = 168;
+    private const int EditPromptY = 170;
+    private const int EditValueY = 182;
+
     private readonly EpisodeSessionState _sessionState;
     private readonly SaveSlotCatalog _catalog;
     private readonly SaveBrowserMode _mode;
+    private readonly Func<IScene>? _returnSceneFactory;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _pageIndex;
     private int _selectedIndex;
     private bool _isEditingSaveName;
     private string _pendingSaveName;
 
-    public SaveSlotsScene(EpisodeSessionState sessionState, SaveSlotCatalog catalog, SaveBrowserMode mode)
+    public SaveSlotsScene(EpisodeSessionState sessionState, SaveSlotCatalog catalog, SaveBrowserMode mode, Func<IScene>? returnSceneFactory = null)
     {
         _sessionState = sessionState;
         _catalog = catalog;
         _mode = mode;
+        _returnSceneFactory = returnSceneFactory;
         _pageIndex = 0;
         _selectedIndex = 0;
         _pendingSaveName = string.Empty;
+    }
+
+    public int? BackgroundPictureNumber
+    {
+        get { return 2; }
+    }
+
+    public SceneMusicKind? MusicOverride
+    {
+        get { return SceneMusicKind.Menu; }
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
@@ -57,7 +82,7 @@ public sealed class SaveSlotsScene : IScene
         {
             SceneAudio.PlayCancel(resources);
             _previousInput = input;
-            return new OptionsScene(_sessionState);
+            return ReturnToCaller();
         }
 
         if (leftPressed && _pageIndex > 0)
@@ -101,43 +126,48 @@ public sealed class SaveSlotsScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (resources.FontRenderer is null)
         {
             return;
         }
 
-        string title = _mode == SaveBrowserMode.Load ? "Load Game" : "Save Game";
-        resources.FontRenderer.DrawShadowText(surface, 160, 78, title, FontKind.Normal, FontAlignment.Center, 15, 0, black: false, shadowDistance: 1);
-
-        string status = !_catalog.HasSaveFile
-            ? "tyrian.sav not found; showing empty slots"
-            : _catalog.IsValid
-                ? string.Format("source: {0}", Path.GetFileName(_catalog.SourcePath))
-                : "tyrian.sav exists but failed validation; showing empty slots";
-        resources.FontRenderer.DrawText(surface, 160, 90, status, FontKind.Tiny, FontAlignment.Center, 14, 0, shadow: true);
+        string title = _mode == SaveBrowserMode.Load ? "One Player Saved Games" : "Save Game";
+        resources.FontRenderer.DrawShadowText(surface, HeaderCenterX, HeaderY, title, FontKind.Normal, FontAlignment.Center, 15, -3, black: false, shadowDistance: 2);
 
         IList<SaveSlotInfo> pageSlots = GetPageSlots(_pageIndex);
-        for (int i = 0; i < pageSlots.Count; i++)
+        int rowCount = GetPageSlotCount(_pageIndex);
+        for (int i = 0; i < rowCount; i++)
         {
-            SaveSlotInfo slot = pageSlots[i];
             bool isSelected = i == _selectedIndex;
-            int y = 100 + (i * 8);
-            string line = BuildSlotLine(slot);
+            int y = RowStartY + (i * RowHeight);
 
-            if (isSelected)
+            if (i == pageSlots.Count)
             {
-                resources.FontRenderer.DrawBlendText(surface, 18, y, $"> {line}", FontKind.Tiny, FontAlignment.Left, 15, 4);
+                RenderExitRow(surface, resources.FontRenderer, y, isSelected);
             }
             else
             {
-                resources.FontRenderer.DrawText(surface, 18, y, line, FontKind.Tiny, FontAlignment.Left, slot.IsEmpty ? (byte)8 : (byte)13, 0, shadow: true);
+                RenderSlotRow(surface, resources.FontRenderer, pageSlots[i], y, isSelected);
             }
         }
 
-        SaveSlotInfo selectedSlot = pageSlots[_selectedIndex];
+        if (_catalog.HasSaveFile && !_catalog.IsValid)
+        {
+            resources.FontRenderer.DrawText(
+                surface,
+                HeaderCenterX,
+                NoticeY,
+                "tyrian.sav invalid; showing empty slots",
+                FontKind.Tiny,
+                FontAlignment.Center,
+                14,
+                0,
+                shadow: true);
+        }
+
+        SaveSlotInfo? selectedSlot = GetSelectedSlot(pageSlots);
         if (_isEditingSaveName)
         {
             bool cursorVisible = ((int)(timeSeconds * 2.0) & 1) == 0;
@@ -147,16 +177,11 @@ public sealed class SaveSlotsScene : IScene
                 editValue += "_";
             }
 
-            resources.FontRenderer.DrawText(surface, 160, 186, "save name:", FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
-            resources.FontRenderer.DrawBlendText(surface, 160, 194, editValue, FontKind.Small, FontAlignment.Center, 15, 3);
-            resources.FontRenderer.DrawText(surface, 160, 204, BuildDetailLine(selectedSlot), FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
-        }
-        else
-        {
-            resources.FontRenderer.DrawText(surface, 160, 194, BuildDetailLine(selectedSlot), FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
+            resources.FontRenderer.DrawText(surface, HeaderCenterX, EditPromptY, "save name:", FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
+            resources.FontRenderer.DrawBlendText(surface, HeaderCenterX, EditValueY, editValue, FontKind.Small, FontAlignment.Center, 15, 3);
         }
 
-        resources.FontRenderer.DrawDark(surface, 160, _isEditingSaveName ? 214 : 204, BuildFooterText(), FontKind.Tiny, FontAlignment.Center, black: false);
+        resources.FontRenderer.DrawDark(surface, HeaderCenterX, FooterY, BuildFooterText(), FontKind.Tiny, FontAlignment.Center, black: false);
     }
 
     private IList<SaveSlotInfo> GetPageSlots(int pageIndex)
@@ -166,20 +191,20 @@ public sealed class SaveSlotsScene : IScene
 
     private int GetPageSlotCount(int pageIndex)
     {
-        return Math.Max(1, GetPageSlots(pageIndex).Count);
+        return GetPageSlots(pageIndex).Count + 1;
     }
 
     private static int? HitTestRow(int x, int y, int rowCount)
     {
-        if (x < 12 || x > 308)
+        if (x < NameColumnX || x > 310)
         {
             return null;
         }
 
         for (int i = 0; i < rowCount; i++)
         {
-            int top = 98 + (i * 8);
-            int bottom = top + 8;
+            int top = RowStartY + (i * RowHeight);
+            int bottom = top + RowHitHeight;
             if (y >= top && y <= bottom)
             {
                 return i;
@@ -187,13 +212,6 @@ public sealed class SaveSlotsScene : IScene
         }
 
         return null;
-    }
-
-    private static string BuildSlotLine(SaveSlotInfo slot)
-    {
-        return slot.IsEmpty
-            ? string.Format("{0:00}  {1,-14}  last -----  ep --", slot.SlotIndex, slot.Name)
-            : string.Format("{0:00}  {1,-14}  last {2,-10}  ep {3}", slot.SlotIndex, slot.Name, slot.LevelName, slot.EpisodeNumber);
     }
 
     private static string BuildDetailLine(SaveSlotInfo slot)
@@ -206,9 +224,14 @@ public sealed class SaveSlotsScene : IScene
     private IScene? ExecuteSelectedSlot(SceneResources resources, int pageSlotCount)
     {
         IList<SaveSlotInfo> pageSlots = GetPageSlots(_pageIndex);
-        if (pageSlotCount <= 0 || _selectedIndex < 0 || _selectedIndex >= pageSlots.Count)
+        if (pageSlotCount <= 0 || _selectedIndex < 0)
         {
             return null;
+        }
+
+        if (_selectedIndex >= pageSlots.Count)
+        {
+            return ReturnToCaller();
         }
 
         SaveSlotInfo selectedSlot = pageSlots[_selectedIndex];
@@ -220,9 +243,14 @@ public sealed class SaveSlotsScene : IScene
     private IScene? BeginSaveEdit(SceneResources resources, int pageSlotCount)
     {
         IList<SaveSlotInfo> pageSlots = GetPageSlots(_pageIndex);
-        if (pageSlotCount <= 0 || _selectedIndex < 0 || _selectedIndex >= pageSlots.Count)
+        if (pageSlotCount <= 0 || _selectedIndex < 0)
         {
             return null;
+        }
+
+        if (_selectedIndex >= pageSlots.Count)
+        {
+            return ReturnToCaller();
         }
 
         SaveSlotInfo selectedSlot = pageSlots[_selectedIndex];
@@ -334,7 +362,7 @@ public sealed class SaveSlotsScene : IScene
             resources.SaveCatalogUpdater(updatedCatalog);
         }
 
-        return new OptionsScene(_sessionState);
+        return ReturnToCaller();
     }
 
     private static EpisodeInfo? ResolveEpisode(IList<EpisodeInfo> episodes, SaveSlotRecord slot)
@@ -363,9 +391,12 @@ public sealed class SaveSlotsScene : IScene
             return "Type ASCII name  Backspace delete  Enter saves  Esc cancels";
         }
 
-        return _mode == SaveBrowserMode.Load
-            ? "Left/Right page  Up/Down choose  Enter loads  Esc back"
-            : "Left/Right page  Up/Down choose  Enter renames/saves  Esc back";
+        if (_mode == SaveBrowserMode.Load)
+        {
+            return "Left or right for 1 or 2 player game.";
+        }
+
+        return "Left or right changes page.  Enter saves.  Esc returns.";
     }
 
     private string BuildInitialSaveName(SaveSlotInfo selectedSlot)
@@ -436,5 +467,48 @@ public sealed class SaveSlotsScene : IScene
         }
 
         return character >= 32 && character <= 126 ? character : '\0';
+    }
+
+    private IScene ReturnToCaller()
+    {
+        return _returnSceneFactory is not null ? _returnSceneFactory() : new OptionsScene(_sessionState);
+    }
+
+    private static void RenderSlotRow(IndexedFrameBuffer surface, TyrianFontRenderer fontRenderer, SaveSlotInfo slot, int y, bool isSelected)
+    {
+        byte nameHue = 13;
+        int nameValue = isSelected ? 6 : (slot.IsEmpty ? 0 : 2);
+        int detailValue = isSelected ? 6 : 2;
+
+        fontRenderer.DrawText(surface, NameColumnX, y, slot.Name, FontKind.Tiny, FontAlignment.Left, nameHue, nameValue, shadow: true);
+        fontRenderer.DrawText(surface, LastLevelColumnX, y, BuildLastLevelText(slot), FontKind.Tiny, FontAlignment.Left, 5, detailValue, shadow: true);
+
+        if (!slot.IsEmpty)
+        {
+            fontRenderer.DrawText(surface, EpisodeColumnX, y, string.Format("EP {0}", slot.EpisodeNumber), FontKind.Tiny, FontAlignment.Left, 5, detailValue, shadow: true);
+        }
+    }
+
+    private void RenderExitRow(IndexedFrameBuffer surface, TyrianFontRenderer fontRenderer, int y, bool isSelected)
+    {
+        string label = _mode == SaveBrowserMode.Load ? "Exit to Main Menu" : "Exit to Previous Menu";
+        fontRenderer.DrawText(surface, NameColumnX, y, label, FontKind.Tiny, FontAlignment.Left, 13, isSelected ? 6 : 2, shadow: true);
+    }
+
+    private static string BuildLastLevelText(SaveSlotInfo slot)
+    {
+        return slot.IsEmpty
+            ? "Last Level -----"
+            : string.Format("Last Level {0}", slot.LevelName);
+    }
+
+    private SaveSlotInfo? GetSelectedSlot(IList<SaveSlotInfo> pageSlots)
+    {
+        if (_selectedIndex < 0 || _selectedIndex >= pageSlots.Count)
+        {
+            return null;
+        }
+
+        return pageSlots[_selectedIndex];
     }
 }

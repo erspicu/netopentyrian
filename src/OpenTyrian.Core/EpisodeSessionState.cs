@@ -37,6 +37,8 @@ public sealed class EpisodeSessionState
         IsArcadeLikeMode = startMode.IsArcadeLike();
         InitialCash = GetInitialCash(startInfo.EpisodeNumber, startMode);
         Cash = InitialCash;
+        Difficulty = 2;
+        InitialDifficulty = Difficulty;
         SaveLevel = CurrentLevelNumber;
         LastLevelSaveRequested = false;
         ItemShopSongIndex = null;
@@ -110,6 +112,10 @@ public sealed class EpisodeSessionState
     public bool IsArcadeLikeMode { get; private set; }
 
     public int Cash { get; private set; }
+
+    public int Difficulty { get; private set; }
+
+    public int InitialDifficulty { get; private set; }
 
     public int SaveLevel { get; private set; }
 
@@ -258,6 +264,12 @@ public sealed class EpisodeSessionState
         return Cash + GetTotalAssetValue(itemCatalog);
     }
 
+    public void SetDifficulty(int difficulty)
+    {
+        Difficulty = ClampDifficulty(difficulty);
+        InitialDifficulty = Difficulty;
+    }
+
     public void SetWeaponPower(ItemCategoryKind kind, int power)
     {
         PlayerLoadout.SetWeaponPower(kind, power);
@@ -286,6 +298,8 @@ public sealed class EpisodeSessionState
         PlayerCount = Math.Max(1, playerCount);
         IsArcadeLikeMode = false;
         Cash = Math.Max(0, slot.Cash);
+        Difficulty = ClampDifficulty(slot.Difficulty);
+        InitialDifficulty = ClampDifficulty(slot.InitialDifficulty == 0 ? slot.Difficulty : slot.InitialDifficulty);
         SaveLevel = Math.Max(1, (int)slot.LevelNumber);
         LastLevelSaveRequested = false;
         AutoExecutedMainLevelNumber = 0;
@@ -313,7 +327,9 @@ public sealed class EpisodeSessionState
             ? string.Format("EP{0}-LV{1}", CurrentEpisodeNumber, SaveLevel)
             : slotName;
         slot.EpisodeNumber = (byte)Math.Max(1, CurrentEpisodeNumber);
+        slot.Difficulty = (byte)ClampDifficulty(Difficulty);
         slot.GameHasRepeated = GameHasRepeated;
+        slot.InitialDifficulty = (byte)ClampDifficulty(InitialDifficulty);
         slot.Items[0] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.FrontWeapon);
         slot.Items[1] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.RearWeapon);
         slot.Items[3] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.SidekickLeft);
@@ -364,5 +380,15 @@ public sealed class EpisodeSessionState
         }
 
         return FullGameInitialCashByEpisode[episodeNumber - 1];
+    }
+
+    private static int ClampDifficulty(int difficulty)
+    {
+        if (difficulty < 1)
+        {
+            return 1;
+        }
+
+        return difficulty > 6 ? 6 : difficulty;
     }
 }

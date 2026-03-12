@@ -1,6 +1,6 @@
 namespace OpenTyrian.Core;
 
-public sealed class EpisodeSelectScene : IScene
+public sealed class EpisodeSelectScene : IScene, IScenePresentation
 {
     private readonly GameStartMode _startMode;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
@@ -10,6 +10,16 @@ public sealed class EpisodeSelectScene : IScene
     public EpisodeSelectScene(GameStartMode startMode = GameStartMode.FullGame)
     {
         _startMode = startMode;
+    }
+
+    public int? BackgroundPictureNumber
+    {
+        get { return 2; }
+    }
+
+    public SceneMusicKind? MusicOverride
+    {
+        get { return SceneMusicKind.Menu; }
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
@@ -68,8 +78,7 @@ public sealed class EpisodeSelectScene : IScene
             EpisodeInfo? selectedEpisode = GetSelectedEpisode();
             if (selectedEpisode is not null)
             {
-                EpisodeSessionState sessionState = new(selectedEpisode.StartInfo, _startMode);
-                return new FullGameMenuScene(sessionState);
+                return new DifficultySelectScene(selectedEpisode, _startMode);
             }
         }
 
@@ -81,8 +90,7 @@ public sealed class EpisodeSelectScene : IScene
     {
         MenuDefinition definition = CreateMenuDefinition(resources.Episodes, _startMode);
         EnsureMenuState(resources, definition);
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
         if (_menuState is not null)
         {
             TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);

@@ -5,15 +5,18 @@ namespace OpenTyrian.Core;
 public sealed class GameHost : IAudioCueSink
 {
     private const int AudioChunkFrames = 1024;
+    private const double SceneEnterFadeSeconds = 0.2;
     private readonly IAssetLocator _assetLocator;
     private readonly IInputSource _inputSource;
     private readonly IAudioDevice _audioDevice;
     private readonly IUserFileStore _userFileStore;
     private readonly Dictionary<AudioCueKind, AudioCueSample> _audioCues = new();
     private readonly Dictionary<SceneMusicKind, AudioCueSample> _musicTracks = new();
+    private readonly Dictionary<int, PicImage> _pictures = new();
     private readonly List<AudioCuePlayback> _activeCuePlaybacks = new();
     private IScene _scene;
     private double _timeSeconds;
+    private double _sceneElapsedSeconds;
     private double _bufferedAudioSeconds;
     private int _musicFrameCursor;
     private PaletteBank? _paletteBank;
@@ -35,11 +38,11 @@ public sealed class GameHost : IAudioCueSink
         _inputSource = inputSource;
         _audioDevice = audioDevice;
         _userFileStore = userFileStore;
-        _scene = new TitleScene();
+        _scene = new IntroLogosScene();
         IndexedFrameBuffer = new IndexedFrameBuffer(320, 200);
         FrameBuffer = new ArgbFrameBuffer(320, 200);
         LoadPalette();
-        LoadTitleImage();
+        LoadPictures();
         LoadTestPcx();
         LoadTestSpriteSheet();
         LoadFonts();
@@ -60,6 +63,8 @@ public sealed class GameHost : IAudioCueSink
 
     public string StatusText { get; private set; } = "Initializing";
 
+    public bool ExitRequested { get; private set; }
+
     public bool HasTyrianData()
     {
         return _assetLocator.FileExists("palette.dat");
@@ -68,12 +73,15 @@ public sealed class GameHost : IAudioCueSink
     public void Tick(double deltaSeconds)
     {
         _timeSeconds += deltaSeconds;
+        _sceneElapsedSeconds += deltaSeconds;
         IScene? nextScene = _scene.Update(CreateSceneResources(), _inputSource.Capture(), deltaSeconds);
         if (nextScene is not null)
         {
             _scene = nextScene;
+            _sceneElapsedSeconds = 0.0;
         }
 
+        UpdatePresentationState();
         PumpAudio(deltaSeconds);
 
         RenderIndexedFrame();
@@ -81,10 +89,12 @@ public sealed class GameHost : IAudioCueSink
         if (_activePalette is not null)
         {
             PaletteRenderer.Render(IndexedFrameBuffer, _activePalette, FrameBuffer);
+            ApplySceneFadeOverlay();
         }
         else
         {
             RenderFallbackArgb();
+            ApplySceneFadeOverlay();
         }
     }
 
@@ -105,7 +115,9 @@ public sealed class GameHost : IAudioCueSink
             TextEntrySource = _inputSource as OpenTyrian.Platform.ITextEntrySource,
             UserFileStore = _userFileStore,
             SaveCatalogUpdater = UpdateSaveCatalog,
+            ExitGame = RequestExit,
             TitleImage = _titleImage,
+            Pictures = _pictures,
             TestPcxImage = _testPcxImage,
             TestSpriteSheet = _testSpriteSheet,
             MainShapeTables = _mainShapeTables,
@@ -125,6 +137,46 @@ public sealed class GameHost : IAudioCueSink
         {
             int value = source[i];
             destination[i] = 0xFF000000u | (uint)(value << 16) | (uint)(value << 8) | (uint)value;
+        }
+    }
+
+    private void ApplySceneFadeOverlay()
+    {
+        double fadeAmount = _sceneElapsedSeconds < SceneEnterFadeSeconds
+            ? 1.0 - (_sceneElapsedSeconds / SceneEnterFadeSeconds)
+            : 0.0;
+
+        ISceneFadeOverlay? fadeOverlay = _scene as ISceneFadeOverlay;
+        if (fadeOverlay is not null)
+        {
+            fadeAmount = Math.Max(fadeAmount, fadeOverlay.FadeToBlackAmount);
+        }
+
+        if (fadeAmount <= 0.0)
+        {
+            return;
+        }
+
+        if (fadeAmount >= 1.0)
+        {
+            uint[] blackPixels = FrameBuffer.Pixels;
+            for (int i = 0; i < blackPixels.Length; i++)
+            {
+                blackPixels[i] = 0xFF000000u;
+            }
+
+            return;
+        }
+
+        uint scale = (uint)Math.Round((1.0 - fadeAmount) * 255.0);
+        uint[] pixels = FrameBuffer.Pixels;
+        for (int i = 0; i < pixels.Length; i++)
+        {
+            uint color = pixels[i];
+            uint red = ((color >> 16) & 0xFFu) * scale / 255u;
+            uint green = ((color >> 8) & 0xFFu) * scale / 255u;
+            uint blue = (color & 0xFFu) * scale / 255u;
+            pixels[i] = 0xFF000000u | (red << 16) | (green << 8) | blue;
         }
     }
 
@@ -150,7 +202,7 @@ public sealed class GameHost : IAudioCueSink
         }
     }
 
-    private void LoadTitleImage()
+    private void LoadPictures()
     {
         if (!_assetLocator.FileExists("tyrian.pic") || _paletteBank is null || PaletteCount == 0)
         {
@@ -161,14 +213,25 @@ public sealed class GameHost : IAudioCueSink
         {
             using Stream stream = _assetLocator.OpenRead("tyrian.pic");
             PicArchive archive = PicArchive.Load(stream);
-            PicImage image = archive.Decode(1);
+            _pictures.Clear();
 
-            if (image.PaletteIndex >= 0 && image.PaletteIndex < PaletteCount)
+            for (int pictureNumber = 1; pictureNumber <= 13; pictureNumber++)
             {
-                _titleImage = image;
-                _activePalette = _paletteBank.Palettes[image.PaletteIndex];
-                StatusText = $"Data OK: {DataDirectory} | palette.dat: {PaletteCount} palettes | title pic loaded";
+                PicImage image = archive.Decode(pictureNumber);
+                _pictures[pictureNumber] = image;
             }
+
+            PicImage? firstPicture;
+            if (_pictures.TryGetValue(1, out firstPicture) && firstPicture is not null)
+            {
+                _titleImage = firstPicture;
+                if (firstPicture.PaletteIndex >= 0 && firstPicture.PaletteIndex < PaletteCount)
+                {
+                    _activePalette = _paletteBank.Palettes[firstPicture.PaletteIndex];
+                }
+            }
+
+            StatusText = $"Data OK: {DataDirectory} | palette.dat: {PaletteCount} palettes | tyrian.pic loaded ({_pictures.Count} pics)";
         }
         catch (Exception ex)
         {
@@ -286,6 +349,11 @@ public sealed class GameHost : IAudioCueSink
     private void UpdateSaveCatalog(SaveSlotCatalog catalog)
     {
         _saveSlots = catalog;
+    }
+
+    public void RequestExit()
+    {
+        ExitRequested = true;
     }
 
     public void Shutdown()
@@ -484,6 +552,12 @@ public sealed class GameHost : IAudioCueSink
 
     private static SceneMusicKind ResolveSceneMusicKind(IScene scene)
     {
+        IScenePresentation? presentation = scene as IScenePresentation;
+        if (presentation is not null && presentation.MusicOverride.HasValue)
+        {
+            return presentation.MusicOverride.Value;
+        }
+
         return scene switch
         {
             TitleScene => SceneMusicKind.Title,
@@ -503,6 +577,35 @@ public sealed class GameHost : IAudioCueSink
             QuitConfirmationScene => SceneMusicKind.Menu,
             _ => SceneMusicKind.Menu,
         };
+    }
+
+    private void UpdatePresentationState()
+    {
+        if (_paletteBank is null)
+        {
+            return;
+        }
+
+        IScenePresentation? presentation = _scene as IScenePresentation;
+        if (presentation is not null && presentation.BackgroundPictureNumber.HasValue)
+        {
+            PicImage? picture;
+            if (_pictures.TryGetValue(presentation.BackgroundPictureNumber.Value, out picture) &&
+                picture is not null &&
+                picture.PaletteIndex >= 0 &&
+                picture.PaletteIndex < _paletteBank.Count)
+            {
+                _activePalette = _paletteBank.Palettes[picture.PaletteIndex];
+                return;
+            }
+        }
+
+        if (_titleImage is not null &&
+            _titleImage.PaletteIndex >= 0 &&
+            _titleImage.PaletteIndex < _paletteBank.Count)
+        {
+            _activePalette = _paletteBank.Palettes[_titleImage.PaletteIndex];
+        }
     }
 
     private sealed class AudioCuePlayback

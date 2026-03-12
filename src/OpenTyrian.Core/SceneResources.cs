@@ -18,7 +18,11 @@ public sealed class SceneResources
 
     public Action<SaveSlotCatalog>? SaveCatalogUpdater { get; init; }
 
+    public Action? ExitGame { get; init; }
+
     public PicImage? TitleImage { get; init; }
+
+    public IDictionary<int, PicImage>? Pictures { get; init; }
 
     public PcxImage? TestPcxImage { get; init; }
 

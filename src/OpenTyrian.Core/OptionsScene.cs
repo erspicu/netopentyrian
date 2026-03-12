@@ -102,8 +102,8 @@ public sealed class OptionsScene : IScene
 
         return _menuState.SelectedItem.Id switch
         {
-            "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load),
-            "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save),
+            "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load, delegate { return new OptionsScene(_sessionState); }),
+            "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save, delegate { return new OptionsScene(_sessionState); }),
             "joystick" => new JoystickSetupScene(_sessionState),
             "keyboard" => new KeyboardSetupScene(_sessionState),
             _ => new FullGameMenuScene(_sessionState),
@@ -165,7 +165,7 @@ public sealed class OptionsScene : IScene
         return fallback;
     }
 
-    private static SaveSlotCatalog BuildFallbackCatalog()
+    public static SaveSlotCatalog BuildFallbackCatalog()
     {
         SaveSlotInfo[] slots = new SaveSlotInfo[22];
         for (int i = 0; i < slots.Length; i++)

@@ -2,6 +2,7 @@ namespace OpenTyrian.Core;
 
 public static class TitleScreenRenderer
 {
+    private const int TyrianLogoSpriteIndex = 146;
     private const int MenuCenterX = 160;
     private const int MenuStartY = 98;
     private const int MenuRowHeight = 16;
@@ -24,6 +25,41 @@ public static class TitleScreenRenderer
 
         RenderInterfaceOverlay(surface, resources.MainShapeTables);
         RenderTestSpriteOverlay(surface, resources.TestSpriteSheet);
+    }
+
+    public static void RenderPictureBackground(IndexedFrameBuffer surface, SceneResources resources, int pictureNumber, bool includeOverlays)
+    {
+        PicImage? image;
+        if (resources.Pictures is not null && resources.Pictures.TryGetValue(pictureNumber, out image) && image is not null)
+        {
+            Array.Copy(image.IndexedPixels, surface.Pixels, Math.Min(image.IndexedPixels.Length, surface.Pixels.Length));
+        }
+        else
+        {
+            RenderFallback(surface, 0.0);
+        }
+
+        if (includeOverlays)
+        {
+            RenderInterfaceOverlay(surface, resources.MainShapeTables);
+            RenderTestSpriteOverlay(surface, resources.TestSpriteSheet);
+        }
+    }
+
+    public static void RenderTyrianLogo(IndexedFrameBuffer surface, MainShapeTables? mainShapeTables, int x, int y)
+    {
+        if (mainShapeTables is null || !mainShapeTables.HasTable(MainShapeTableKind.Planet))
+        {
+            return;
+        }
+
+        SpriteTable planetShapes = mainShapeTables.PlanetShapes;
+        if (!planetShapes.Exists(TyrianLogoSpriteIndex))
+        {
+            return;
+        }
+
+        SpriteTableBlitter.Blit(surface, x, y, planetShapes, TyrianLogoSpriteIndex);
     }
 
     public static void RenderTitleOverlay(IndexedFrameBuffer surface, TyrianFontRenderer? fontRenderer, int paletteCount)
