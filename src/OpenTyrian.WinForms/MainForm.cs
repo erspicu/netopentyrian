@@ -5,15 +5,17 @@ namespace OpenTyrian.WinForms;
 public sealed class MainForm : Form
 {
     private readonly GameHost _gameHost;
+    private readonly WinFormsKeyboardInputSource _inputSource;
     private readonly Panel _renderPanel;
     private readonly Label _statusLabel;
     private readonly System.Windows.Forms.Timer _frameTimer;
     private readonly GdiVideoDevice _videoDevice;
     private DateTime _lastFrameUtc;
 
-    public MainForm(GameHost gameHost)
+    public MainForm(GameHost gameHost, WinFormsKeyboardInputSource inputSource)
     {
         _gameHost = gameHost;
+        _inputSource = inputSource;
 
         Text = "OpenTyrian .NET";
         StartPosition = FormStartPosition.CenterScreen;
@@ -51,6 +53,8 @@ public sealed class MainForm : Form
         UpdateStatus();
         Shown += (_, _) => _frameTimer.Start();
         FormClosed += OnFormClosed;
+        KeyDown += OnKeyDown;
+        KeyUp += OnKeyUp;
     }
 
     private void UpdateStatus()
@@ -79,5 +83,15 @@ public sealed class MainForm : Form
         _frameTimer.Stop();
         _frameTimer.Dispose();
         _videoDevice.Dispose();
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs e)
+    {
+        _inputSource.SetKeyState(e.KeyCode, isDown: true);
+    }
+
+    private void OnKeyUp(object? sender, KeyEventArgs e)
+    {
+        _inputSource.SetKeyState(e.KeyCode, isDown: false);
     }
 }

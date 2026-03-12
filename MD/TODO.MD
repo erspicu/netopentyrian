@@ -188,7 +188,7 @@
 - 可顯示標題圖、背景、字型、游標
 - 顏色與 palette 效果基本正確
 
-狀態: 未開始
+狀態: 進行中
 
 ### 第 5 階段: 輸入層
 
@@ -384,3 +384,52 @@
 - 已將核心畫面模型改成 `IndexedFrameBuffer (8-bit)` + `ArgbFrameBuffer (32-bit)` 兩段式
 - 已新增 `PaletteRenderer`，依 palette 將 indexed framebuffer 轉為 32-bit 輸出
 - 目前核心的畫面流程已更接近上游 `rgb_palette[*src]` 的設計，後續可直接接 sprite / font / background
+- 已新增 `Vga256` 基礎繪圖模組，包含像素點、十字點、矩形外框、區塊填色、shade、bright
+- `GameHost` 的 fallback 畫面已改為直接使用 `Vga256` primitive 作圖，開始接近上游 `vga256d.c` 的使用方式
+- 已新增 `PcxLoader` / `PcxImage`，可解析 320x200 8-bit PCX 與尾端 VGA palette
+- 目前已打通 `tshp2.pcx` 的讀取路徑；若沒有可用的 `tyrian.pic`，可直接用 PCX 顯示 indexed 圖像
+- 已新增 `Sprite2Loader` / `Sprite2Sheet` / `Sprite2Blitter`
+- 已打通 `newsh1.shp` 的 offset table 解析與單張 sprite blit，並將前三張 sprite 疊到目前畫面左上角做驗證
+- 已補上 `Sprite2` 的 `clip / blend / darken / filter / filter+clip` 變體
+- 目前測試畫面已直接用不同 sprite blit 模式做可視驗證，開始接近上游 `sprite.c` 的常用路徑
+- 已新增主 `SpriteTable` 載入路徑，可從 `tyrian.shp` 載入前三套字型 shape table
+- 已新增 `TyrianFontRenderer`，目前可用上游 `font_ascii` 映射繪製 normal / small / tiny 三套字型
+- 已接上最小文字測試路徑，測試畫面會直接疊出 OpenTyrian 字型與陰影文字，為後續主選單 UI 鋪底
+- 已補上字型對齊、blend、drop shadow、full shadow 變體，讓 C# 端介面更接近上游 `font.c` 的常用呼叫方式
+- 已將 `tyrian.shp` 主 shape tables 型別化，開始直接載入 `OPTION_SHAPES` / `FACE_SHAPES`
+- 目前測試畫面已可疊出 message box、option icon、face sprite 等真實介面素材，作為主選單 UI 資源路徑的第一個驗證
+- 已將目前的標題/測試畫面拆成獨立 `TitleScene` 結構，`GameHost` 改為只管理資源載入、scene 執行與 palette 轉換
+- 已新增最小鍵盤輸入抽象 `IInputSource` / `InputSnapshot`，並由 WinForms 事件更新 snapshot
+- `TitleScene` 目前已可用 `Enter` 進入 prototype menu、方向鍵切換選項、`Escape` 返回 title，作為後續主選單輸入骨架
+- 已將 prototype menu 抽成 `MenuDefinition` / `MenuItemDefinition` / `MenuState`，scene 不再硬編碼選單控制流與說明文字
+- 已將 `TitleScene` 與 `MainMenuScene` 分離，scene 切換改由 `Update()` 回傳下一個 scene，`GameHost` 不再管理 title/menu 內部狀態
+- `MainMenuScene` 的選項與順序已開始對齊上游 `menus.c` 的 `gameplaySelect()`，目前使用 1P Full Game / 1P Arcade / 2P Arcade / Network disabled
+- 已新增 `EpisodeSelectScene` 骨架，`1 Player Full Game` 現在會由主選單實際切進 episode 選擇流程
+- 已新增 `EpisodeCatalogLoader`，目前會依 `tyrian1.lvl` 到 `tyrian4.lvl` 的實際存在狀態建立 episode 清單，對齊上游 `JE_scanForEpisodes()` 的可用性判斷
+- 已新增 `TyrianHelpTextLoader`，episode 名稱現在優先從 `tyrian.hdt` 讀取上游加密 Pascal string，而不是使用內建常數
+- 已將 `gameplay_name` 與 `mainMenuHelp` 一併納入 `tyrian.hdt` 載入路徑，`MainMenuScene` 現在優先使用真實遊戲文字生成標題、選項與 help 文案
+- 已新增 `EpisodeStartInfo`，episode 選擇結果現在會攜帶 `tyrianX.lvl` / `levelsX.dat` / `cubetxtX.dat` 等初始化 metadata，對齊上游 `JE_initEpisode()` 所需資訊
+- 已用 `EpisodeSessionState` + `EpisodeSessionScene` 取代單純 stub 畫面，現在會保存目前 episode number、level number 與對應資料檔路徑
+- `EpisodeSessionState` 已補進 `initial episode number`、`bonusLevel`、`jumpBackToEpisode1`、`gameHasRepeated` 等欄位，開始對齊上游 episode/session 核心狀態
+- 已新增 `LevelIndexLoader`，目前會解析 `.lvl` header 取得關卡數與 offset table，並把 `JE_analyzeLevel()` 對應資訊帶進 `EpisodeSessionState`
+- 已新增 `EpisodeScriptLoader`，目前會對 `levelsX.dat` 建立最小 metadata，包含檔案存在、大小與前段 section marker 掃描結果
+- 已新增 `CubeTextLoader`，目前會對 `cubetxtX.dat` 建立最小 metadata，讓 episode session 對三條主要 episode 資源路徑都具備基本掌握
+- `EpisodeScriptLoader` 已擴成完整 section 掃描，現在會把 `levelsX.dat` 中 `*` 開頭的主 section 切出來，記錄 label、字串序號與檔案位移
+- 已新增 `MainLevelEntry` 映射，`CurrentLevelNumber` 現在會直接對應到 `levelsX.dat` 中第 N 個 `*` section，開始貼近上游 `mainLevel` 的使用方式
+- 已新增最小 section command model，現在會從當前 `main level` section 掃出 `]J`、`]2`、`]s`、`]b` 等控制指令，為後續執行流程做準備
+- 已讓 `EpisodeSessionState` 可套用第一個 `]J` section jump，`Enter` 目前可觸發 `CurrentLevelNumber` / `CurrentMainLevelEntry` 更新，形成第一個可執行的 script 控制命令
+- 已補上 `]2` 條件跳轉的最小執行路徑，暫時用 `IsArcadeLikeMode` placeholder 作條件判斷，讓 script command 開始具備分支能力
+- 已把 `]s` / `]b` 轉成 session side effects，現在會記錄 `saveLevel` 與 `lastLevelSaveRequested`，作為後續真正存檔流程的前置狀態
+- 已新增 `EpisodeCommandInterpreter`，把當前 section 的已知控制命令執行從 scene 拆出來，形成可重複呼叫的最小 interpreter
+- 已補上 `]i`、`]B`、`]S` 的最小 interpreter 路徑，現在會記錄 item-shop song index、fade-black 請求與 network text sync 請求
+- 已在 interpreter 執行前清除 transient flags，讓 `FadeBlackRequested` / `NetworkTextSyncRequested` 具備單次事件語意，不會持續黏在 session state 上
+- 已把 `]I` 納入 block command parsing，loader 現在會連帶讀取後續 9 行 payload，interpreter 會先把 block 行數保存在 session state
+- `]I` 的 9 行 payload 現在已會解析成 item availability 數字列，session state 不再只保存行數，而會保存結構化 row 資料
+- `]I` 的 item availability 已進一步整理成接近上游 `itemAvail[9][10]` / `itemAvailMax[9]` 的資料形狀，session state 現在會保存各列最大值與首批 item id 摘要
+- 已把上游 `itemAvailMap[7]` 轉成 `ShopCategory` 模型，現在 session state 可直接拿到商店分類與對應 item id 清單，為後續 upgrade/shop menu 對齊 `game_menu.c` 鋪路
+- 已新增 `UpgradeMenuScene` 原型，`EpisodeSessionScene` 現在可用 `Down` 進入第一個可導航的商店/升級選單，並用 `Up/Down` 切分類、`Left/Right` 切 item slot
+- `UpgradeMenuScene` 已往 `JE_genItemMenu()` 靠攏，現在會依分類生成 submenu 樣式的 item list、保留每個分類的目前 slot、支援 `Done` 列，並顯示 prepared item 狀態
+- 已新增最小 `PlayerLoadoutState`，`UpgradeMenuScene` 的確認動作現在會真的寫回 session 內的裝備狀態，並在 episode session 畫面顯示 ship/front/rear 摘要
+- 已將商店分類語意校正到上游 `playeritem_map()` / `itemAvailMap()`，現在 loadout 會完整追蹤 `ship/front/rear/shield/generator/left/right sidekick` 七類裝備
+- `UpgradeMenuScene` 進入時已會依當前 loadout 對齊各分類預設 slot，行為開始接近上游 `JE_genItemMenu()` 會預設選到目前裝備項目的方式
+- `UpgradeMenuScene` 已改成兩層互動：先選分類、再進 submenu 選 item，`Esc` 可從 submenu 返回分類層，整體流程更接近上游 `MENU_UPGRADES -> MENU_UPGRADE_SUB`

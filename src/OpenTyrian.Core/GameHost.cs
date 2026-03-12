@@ -5,18 +5,33 @@ namespace OpenTyrian.Core;
 public sealed class GameHost
 {
     private readonly IAssetLocator _assetLocator;
+    private readonly IInputSource _inputSource;
+    private IScene _scene;
     private double _timeSeconds;
     private PaletteBank? _paletteBank;
     private PaletteColor[]? _activePalette;
     private PicImage? _titleImage;
+    private PcxImage? _testPcxImage;
+    private Sprite2Sheet? _testSpriteSheet;
+    private MainShapeTables? _mainShapeTables;
+    private TyrianFontRenderer? _fontRenderer;
+    private IReadOnlyList<EpisodeInfo> _episodes = Array.Empty<EpisodeInfo>();
+    private GameplayTextInfo? _gameplayText;
 
-    public GameHost(IAssetLocator assetLocator)
+    public GameHost(IAssetLocator assetLocator, IInputSource inputSource)
     {
         _assetLocator = assetLocator;
+        _inputSource = inputSource;
+        _scene = new TitleScene();
         IndexedFrameBuffer = new IndexedFrameBuffer(320, 200);
         FrameBuffer = new ArgbFrameBuffer(320, 200);
         LoadPalette();
         LoadTitleImage();
+        LoadTestPcx();
+        LoadTestSpriteSheet();
+        LoadFonts();
+        LoadEpisodes();
+        LoadGameplayText();
     }
 
     public IndexedFrameBuffer IndexedFrameBuffer { get; }
@@ -37,6 +52,12 @@ public sealed class GameHost
     public void Tick(double deltaSeconds)
     {
         _timeSeconds += deltaSeconds;
+        IScene? nextScene = _scene.Update(CreateSceneResources(), _inputSource.Capture(), deltaSeconds);
+        if (nextScene is not null)
+        {
+            _scene = nextScene;
+        }
+
         RenderIndexedFrame();
 
         if (_activePalette is not null)
@@ -51,42 +72,22 @@ public sealed class GameHost
 
     private void RenderIndexedFrame()
     {
-        if (_titleImage is not null && _activePalette is not null)
-        {
-            RenderPicImage(_titleImage);
-            return;
-        }
-
-        Span<byte> pixels = IndexedFrameBuffer.Pixels;
-        int width = IndexedFrameBuffer.Width;
-        int height = IndexedFrameBuffer.Height;
-        int phase = (int)(_timeSeconds * 60.0);
-
-        for (int y = 0; y < height; y++)
-        {
-            int rowOffset = y * width;
-
-            for (int x = 0; x < width; x++)
-            {
-                int paletteIndex = (x + y + phase * 2) & 0xFF;
-
-                if (((x / 20) + (y / 20) + (phase / 10)) % 2 == 0)
-                {
-                    paletteIndex = (paletteIndex + 48) & 0xFF;
-                }
-
-                pixels[rowOffset + x] = (byte)paletteIndex;
-            }
-        }
-
-        DrawBorder(width, height, 255);
+        _scene.Render(IndexedFrameBuffer, CreateSceneResources(), _timeSeconds);
     }
 
-    private void RenderPicImage(PicImage image)
+    private SceneResources CreateSceneResources()
     {
-        Span<byte> pixels = IndexedFrameBuffer.Pixels;
-        ReadOnlySpan<byte> indexed = image.IndexedPixels;
-        indexed.CopyTo(pixels);
+        return new SceneResources
+        {
+            PaletteCount = PaletteCount,
+            TitleImage = _titleImage,
+            TestPcxImage = _testPcxImage,
+            TestSpriteSheet = _testSpriteSheet,
+            MainShapeTables = _mainShapeTables,
+            FontRenderer = _fontRenderer,
+            Episodes = _episodes,
+            GameplayText = _gameplayText,
+        };
     }
 
     private void RenderFallbackArgb()
@@ -149,20 +150,86 @@ public sealed class GameHost
         }
     }
 
-    private void DrawBorder(int width, int height, byte colorIndex)
+    private void LoadTestPcx()
     {
-        Span<byte> pixels = IndexedFrameBuffer.Pixels;
-
-        for (int x = 0; x < width; x++)
+        if (!_assetLocator.FileExists("tshp2.pcx"))
         {
-            pixels[x] = colorIndex;
-            pixels[(height - 1) * width + x] = colorIndex;
+            return;
         }
 
-        for (int y = 0; y < height; y++)
+        try
         {
-            pixels[y * width] = colorIndex;
-            pixels[y * width + (width - 1)] = colorIndex;
+            using Stream stream = _assetLocator.OpenRead("tshp2.pcx");
+            _testPcxImage = PcxLoader.Load(stream);
+
+            if (_testPcxImage.Width == IndexedFrameBuffer.Width &&
+                _testPcxImage.Height == IndexedFrameBuffer.Height &&
+                _titleImage is null)
+            {
+                _activePalette = _testPcxImage.Palette;
+                StatusText = $"Data OK: {DataDirectory} | palette.dat: {PaletteCount} palettes | tshp2.pcx loaded";
+            }
         }
+        catch (Exception ex)
+        {
+            StatusText = $"PCX load failed: {ex.Message}";
+        }
+    }
+
+    private void LoadTestSpriteSheet()
+    {
+        if (!_assetLocator.FileExists("newsh1.shp"))
+        {
+            return;
+        }
+
+        try
+        {
+            using Stream stream = _assetLocator.OpenRead("newsh1.shp");
+            _testSpriteSheet = Sprite2Loader.Load(stream);
+
+            if (_titleImage is null && _testPcxImage is null)
+            {
+                StatusText = $"Data OK: {DataDirectory} | sprite sheet loaded: newsh1.shp ({_testSpriteSheet.Count} sprites)";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Sprite sheet load failed: {ex.Message}";
+        }
+    }
+
+    private void LoadFonts()
+    {
+        if (!_assetLocator.FileExists("tyrian.shp"))
+        {
+            return;
+        }
+
+        try
+        {
+            using Stream stream = _assetLocator.OpenRead("tyrian.shp");
+            _mainShapeTables = MainShapeTablesLoader.Load(stream);
+            _fontRenderer = new TyrianFontRenderer(_mainShapeTables);
+
+            if (_titleImage is null && _testPcxImage is null && _testSpriteSheet is null)
+            {
+                StatusText = $"Data OK: {DataDirectory} | main fonts loaded";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Font load failed: {ex.Message}";
+        }
+    }
+
+    private void LoadEpisodes()
+    {
+        _episodes = EpisodeCatalogLoader.Load(_assetLocator);
+    }
+
+    private void LoadGameplayText()
+    {
+        _gameplayText = GameplayTextLoader.Load(_assetLocator);
     }
 }
