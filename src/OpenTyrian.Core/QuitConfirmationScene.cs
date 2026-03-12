@@ -85,13 +85,13 @@ public sealed class QuitConfirmationScene : IScene
     {
         MenuDefinition definition = CreateDefinition();
         EnsureMenuState(definition);
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
         if (_menuState is null || resources.FontRenderer is null)
         {
             return;
         }
 
+        resources.FontRenderer.DrawText(surface, 160, 24, _sessionState.StartInfo.DisplayName, FontKind.Tiny, FontAlignment.Center, 14, 1, shadow: true);
         TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);
         resources.FontRenderer.DrawDark(surface, 160, 194, "Left/Right or mouse choose  Enter/click confirm  Esc cancel", FontKind.Tiny, FontAlignment.Center, black: false);
     }

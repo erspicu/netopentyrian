@@ -80,15 +80,15 @@ public sealed class LevelSelectScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (resources.FontRenderer is null)
         {
             return;
         }
 
-        resources.FontRenderer.DrawShadowText(surface, 160, 78, "Next Level", FontKind.Normal, FontAlignment.Center, 15, 0, black: false, shadowDistance: 1);
+        resources.FontRenderer.DrawText(surface, 160, 24, _sessionState.StartInfo.DisplayName, FontKind.Tiny, FontAlignment.Center, 14, 1, shadow: true);
+        resources.FontRenderer.DrawShadowText(surface, 160, 38, "Next Level", FontKind.Normal, FontAlignment.Center, 15, -3, black: false, shadowDistance: 2);
 
         if (_sessionState.MainLevelEntries.Count == 0)
         {

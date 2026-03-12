@@ -60,6 +60,7 @@
 - 已新增 `GameplayScene` 垂直切片；`Next Level` 現在會真的進入最小 playable mission，支援移動、前/後武器與 sidekick 射擊、敵人生成/敵彈、護盾/裝甲 HUD、pause menu、過關獎勵與 level/save 進度更新
 - `GameHost` 目前會把 scene cue 和背景音樂一起混音；title/menu/shop/jukebox/gameplay 已優先走原版 `music.mus -> LDS -> OPL` 播放鏈，保留合成式 BGM 作 fallback
 - `Jukebox` 已改成較接近原版的自由操作模式，支援方向鍵換曲、`S/R` stop/restart、`Space` 隱藏提示，並套用原版 VGA palette 類型的獨立色盤
+- title menu 的 `Demo` 已開始直接讀取原版 `demo.1` 到 `demo.5`，把 header/loadout/按鍵流灌進目前的最小 `GameplayScene`
 - full-game hub 的 `Ship Specs` 已啟用，會顯示目前 ship / shield / generator / weapon / sidekick 摘要
 - `tyrian.hdt` 已開始額外載入 ship info 兩段文字，`ShipSpecsScene` 會優先顯示真實 ship 說明
 - `ItemCatalog` 已擴充 ship / shield / generator / weapon 的基礎 stat metadata，供 ship specs 與後續 UI 顯示使用
@@ -76,6 +77,7 @@
 - `Options -> Joystick Setup` 現在可進入，WinForms 輸入層已改成輪詢 `XInput + DirectInput`，並可對六個核心按鍵做最小手把重綁
 - `Arcade` 已拆出獨立 `ArcadeMenuScene`，不再和 `Full Game` 共用同一個 hub；`Options` 也會依模式切到 full-game 或 limited arcade variant
 - `FullGameMenuScene` 已移除 `Session State` 這類 debug 主選項，畫面改回較接近 item/menu 的主流程入口
+- `Level Select / Ship Specs / Data Cubes / Upgrade / Quit` 等二級 scene 已改回 `pic 2` 背景，不再共用早期 debug title overlay
 - 手把綁定目前先保存在執行期間記憶體內；之後會再依 `tool/aprnes.ini` 類似的 key/value 格式補上 ini 讀寫
 
 目前主體移植已收斂到可啟動、可操作 menu、可進關卡、可存讀檔、可播放原版 `music.mus` 場景音樂與最小 cue、可用鍵鼠手把操作的狀態。

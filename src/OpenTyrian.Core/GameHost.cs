@@ -116,6 +116,7 @@ public sealed class GameHost : IAudioCueSink
     {
         return new SceneResources
         {
+            AssetLocator = _assetLocator,
             PaletteCount = PaletteCount,
             AudioCueSink = this,
             SaveSlots = _saveSlots,

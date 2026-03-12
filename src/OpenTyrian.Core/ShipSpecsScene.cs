@@ -38,8 +38,7 @@ public sealed class ShipSpecsScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (resources.FontRenderer is null)
         {
@@ -52,21 +51,31 @@ public sealed class ShipSpecsScene : IScene
         ItemCatalogEntry? shipEntry = resources.ItemCatalog?.GetEntry(ItemCategoryKind.Ship, shipId);
         ShipDescriptionEntry description = GetShipDescription(resources.GameplayText, shipId);
 
+        resources.FontRenderer.DrawText(
+            surface,
+            160,
+            24,
+            _sessionState.StartInfo.DisplayName,
+            FontKind.Tiny,
+            FontAlignment.Center,
+            14,
+            1,
+            shadow: true);
         resources.FontRenderer.DrawShadowText(
             surface,
             160,
-            78,
+            38,
             "Ship Specs",
             FontKind.Normal,
             FontAlignment.Center,
             15,
-            0,
+            -3,
             black: false,
-            shadowDistance: 1);
+            shadowDistance: 2);
         resources.FontRenderer.DrawText(
             surface,
             160,
-            90,
+            50,
             string.Format(
                 "{0}  value:{1}  cash:{2}",
                 ItemNameResolver.GetCompactItemName(ItemCategoryKind.Ship, shipId, resources.ItemCatalog),

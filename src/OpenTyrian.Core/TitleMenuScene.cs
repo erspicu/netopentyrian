@@ -195,6 +195,12 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
 
     private static IScene? CreateDemoScene(SceneResources resources)
     {
+        IScene? demoScene = DemoPlaybackSceneFactory.TryCreate(resources);
+        if (demoScene is not null)
+        {
+            return demoScene;
+        }
+
         EpisodeSessionState? demoSession = TitleFlowHelper.CreateFirstAvailableSession(resources.Episodes, GameStartMode.ArcadeOnePlayer, 2);
         return demoSession is null ? null : new GameplayScene(demoSession, true);
     }

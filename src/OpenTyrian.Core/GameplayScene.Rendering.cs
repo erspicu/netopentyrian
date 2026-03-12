@@ -34,7 +34,9 @@ public sealed partial class GameplayScene
             surface,
             8,
             4,
-            string.Format("Lv {0:00} kills {1}/{2}", _missionLevelNumber, _destroyedEnemies, GetRequiredKills()),
+            _demoPlayback is not null
+                ? _demoPlayback.DisplayLabel
+                : string.Format("Lv {0:00} kills {1}/{2}", _missionLevelNumber, _destroyedEnemies, GetRequiredKills()),
             FontKind.Tiny,
             FontAlignment.Left,
             15,
@@ -65,8 +67,8 @@ public sealed partial class GameplayScene
             160,
             194,
             _phase == MissionPhase.Active
-                ? "Arrows move  Confirm fires  Esc pauses"
-                : "Enter or Esc returns to full-game menu",
+                ? (_demoPlayback is null ? "Arrows move  Confirm fires  Esc pauses" : "Demo playback  press any key or click to return")
+                : (_returnToTitleOnExit ? "Enter or Esc returns to title menu" : "Enter or Esc returns to game menu"),
             FontKind.Tiny,
             FontAlignment.Center,
             black: false);
@@ -147,11 +149,11 @@ public sealed partial class GameplayScene
             ? _advancedToNextLevel
                 ? string.Format("Next level ready: {0:00}", _missionLevelNumber + 1)
                 : "Episode end placeholder reached"
-            : "Retry from pause or return to full-game menu";
+            : (_returnToTitleOnExit ? "Demo finished. Return to title menu." : "Retry from pause or return to game menu");
         resources.FontRenderer.DrawShadowText(surface, 160, 82, title, FontKind.Normal, FontAlignment.Center, 15, 0, black: false, shadowDistance: 1);
         resources.FontRenderer.DrawText(surface, 160, 96, string.Format("earned cash: +{0}", _earnedCash), FontKind.Tiny, FontAlignment.Center, 14, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 104, detail, FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawDark(surface, 160, 112, "Enter or Esc returns to full-game menu", FontKind.Tiny, FontAlignment.Center, black: false);
+        resources.FontRenderer.DrawDark(surface, 160, 112, _returnToTitleOnExit ? "Enter or Esc returns to title menu" : "Enter or Esc returns to game menu", FontKind.Tiny, FontAlignment.Center, black: false);
     }
 
     private void RenderPauseOverlay(IndexedFrameBuffer surface, SceneResources resources)

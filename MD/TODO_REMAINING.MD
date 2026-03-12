@@ -2,21 +2,21 @@
 
 最後更新: 2026-03-13  
 目前狀態: 以這份文件作為後續真實進度基線  
-總完成度(估算): 約 92%
+總完成度(估算): 約 94%
 
 ## 百分比摘要
 
-- 整體完成度(估算): `92%`
-- 啟動與 title 主樹: `72%`
+- 整體完成度(估算): `94%`
+- 啟動與 title 主樹: `82%`
 - New Game 子樹: `68%`
-- Title 其他分支: `76%`
+- Title 其他分支: `82%`
 - Title Setup 與 Jukebox: `82%`
 - 音樂與音效時機: `84%`
 - Full Game / In-game 主流程: `55%`
-- Full Game hub / item screen parity: `52%`
-- 視覺與版面: `58%`
+- Full Game hub / item screen parity: `58%`
+- 視覺與版面: `64%`
 - 資料與存檔對齊: `60%`
-- Input / Demo / Regression: `54%`
+- Input / Demo / Regression: `68%`
 
 ## 更新規則
 
@@ -32,12 +32,12 @@
 
 ## 目前已確認的大缺口
 
-1. 啟動流程不對齊
-   - 原版是 `intro_logos() -> titleScreen()`
-   - 現況是直接進自製 title shell
-2. 啟動音樂時機不對
-   - 原版 `Epic / Eclipse` 前導不先播 title song
-   - 現況是程式一啟動就進 title 類型 BGM
+1. 啟動/title 主樹已打通，但細節仍需校正
+   - `intro_logos() -> titleScreen()` 已補上
+   - logo / title 的淡入淡出與字/圖 timing 仍需持續比對原版
+2. 啟動音樂時機已基本對齊，但仍需逐段驗證
+   - 前導 logo 已維持靜音
+   - title / setup / shop / gameplay 的切歌與淡出入仍要繼續比對
 3. title menu 樹仍有未完全對齊部分
    - `Instructions` 已補成 topic/page 流程，但版面仍是近似實作
    - `Demo` 仍是最小 playable slice，不是原版 record/replay
@@ -53,17 +53,18 @@
 
 ### 第 1 組: 啟動與 title 主樹
 
-狀態: 進行中，已達約 72%
+狀態: 進行中，已達約 82%
 
-1. 補 `intro_logos()`
-   - `pic 10` -> `pic 12`
-   - 支援按鍵跳過
-   - 前導階段維持靜音
-2. 補真正的 `titleScreen()`
-   - 背景改成 `pic 4`
-   - 項目改成 `Start New Game / Load Game / High Scores / Instructions / Setup / Demo / Quit`
-3. 把現在的 `MainMenuScene` 正名成 `New Game -> gameplaySelect()` 的位置
-4. `Quit` 從 title menu 真的可離開程式
+1. `intro_logos()`
+   - `pic 10` -> `pic 12` 已補上
+   - 已支援按鍵跳過
+   - 前導階段已維持靜音
+2. `titleScreen()`
+   - 背景 `pic 4` 與 7 個 title menu 項目已接上
+   - `Quit` 已可從 title menu 正確離開程式
+3. `MainMenuScene`
+   - 已收回 `New Game -> gameplaySelect()` 的位置
+4. 後續只剩 logo/title 的淡入淡出與細部 timing 校正
 
 驗收標準:
 - 啟動後先看到兩段 logo，再進 title menu
@@ -87,7 +88,7 @@
 
 ### 第 3 組: Title 其他分支
 
-狀態: 進行中，已達約 76%
+狀態: 進行中，已達約 82%
 
 1. `Load Game`
    - 從 title menu 直接可進
@@ -101,7 +102,8 @@
    - 仍需持續微調 page box 版面與字距
 4. `Demo`
    - 已補 title menu `Demo` route 與 30 秒 idle demo 觸發
-   - demo 目前仍是最小 playable slice，不是原版 demo record/replay
+   - 已開始直接讀 `demo.1` 到 `demo.5` 的 header 與 key stream
+   - demo 目前會以原版 demo 檔驅動最小 gameplay slice，但還不是原版完整關卡/replay
 
 驗收標準:
 - title menu 七個選項都能進入對應功能
@@ -157,7 +159,7 @@
 
 ### 第 7 組: Full Game hub / item screen / menu parity
 
-狀態: 進行中，已達約 52%
+狀態: 進行中，已達約 58%
 
 1. `FullGameMenuScene` 已移除 `Session State` 這類 debug 主選項，並改回較接近 item/menu 的畫面
 2. `FullGameMenuScene` 仍需要更接近原版 item screen 細節與子選單佈局
@@ -170,12 +172,13 @@
 
 ### 第 8 組: 視覺與版面
 
-狀態: 進行中，已達約 58%
+狀態: 進行中，已達約 64%
 
 1. title/menu 目前仍有 debug 文案與宿主資訊
 2. WinForms status bar 應淡出或只在錯誤狀態顯示
 3. 黑邊、縮放和 menu text 位置仍與原版有明顯差距
 4. `320x240` 可接受，但 menu 與視窗構圖仍需調整
+5. `Level Select / Ship Specs / Data Cubes / Upgrade / Quit` 等二級 scene 已改回 `pic 2` 背景，不再共用 debug title overlay
 
 驗收標準:
 - 首屏觀感不再一眼看出是 debug shell
@@ -193,7 +196,7 @@
 
 ### 第 10 組: Input / Demo / Regression
 
-狀態: 進行中，已達約 50%
+狀態: 進行中，已達約 68%
 
 1. title/menu/demo 的 sendkey / keyboard / mouse 行為要重新驗證
 2. 手把行為先維持目前 runtime 綁定
@@ -201,6 +204,7 @@
 4. 每完成一組，重新與原版做截圖比對
 5. `compare_versions.ps1` 已再次刷新原版 / C# 入口畫面截圖到 `temp/compare-versions`
 6. `compare_jukebox.ps1` 已改成逐段導航與分步截圖，但 C# 版自動導覽仍需持續校正 delay / key route
+7. title demo 已開始直接讀原版 `demo.1` 到 `demo.5`，不再只是假 route
 
 驗收標準:
 - `temp/compare-versions` 可持續看出差距縮小

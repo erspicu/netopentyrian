@@ -1,6 +1,6 @@
 namespace OpenTyrian.Core;
 
-public sealed partial class GameplayScene : IScene
+public sealed partial class GameplayScene : IScene, ICustomMusicScene
 {
     private const float PlayfieldLeft = 12f;
     private const float PlayfieldTop = 22f;
@@ -14,11 +14,13 @@ public sealed partial class GameplayScene : IScene
 
     private readonly EpisodeSessionState _sessionState;
     private readonly bool _returnToTitleOnExit;
+    private readonly DemoPlaybackController? _demoPlayback;
     private readonly Random _random;
     private readonly List<ProjectileState> _playerProjectiles;
     private readonly List<ProjectileState> _enemyProjectiles;
     private readonly List<EnemyState> _enemies;
     private readonly int _missionLevelNumber;
+    private readonly int? _musicTrackIndexOverride;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private float _playerX;
     private float _playerY;
@@ -38,10 +40,12 @@ public sealed partial class GameplayScene : IScene
     private bool _advancedToNextLevel;
     private bool _combatInitialized;
 
-    public GameplayScene(EpisodeSessionState sessionState, bool returnToTitleOnExit)
+    public GameplayScene(EpisodeSessionState sessionState, bool returnToTitleOnExit, DemoPlaybackController? demoPlayback = null, int? musicTrackIndexOverride = null)
     {
         _sessionState = sessionState;
         _returnToTitleOnExit = returnToTitleOnExit;
+        _demoPlayback = demoPlayback;
+        _musicTrackIndexOverride = musicTrackIndexOverride;
         _missionLevelNumber = Math.Max(1, sessionState.CurrentLevelNumber);
         _random = new Random((_missionLevelNumber * 997) + sessionState.Cash);
         _playerProjectiles = new List<ProjectileState>();
@@ -62,8 +66,54 @@ public sealed partial class GameplayScene : IScene
     {
     }
 
+    public string MusicCacheKey
+    {
+        get
+        {
+            return _musicTrackIndexOverride.HasValue
+                ? string.Format("gameplay:{0}", _musicTrackIndexOverride.Value)
+                : "gameplay:default";
+        }
+    }
+
+    public int? MusicTrackIndex
+    {
+        get { return _musicTrackIndexOverride; }
+    }
+
+    public bool StopMusic
+    {
+        get { return false; }
+    }
+
+    public AudioCueSample CreateFallbackMusicTrack(int sampleRate, int channelCount)
+    {
+        return _musicTrackIndexOverride.HasValue
+            ? BackgroundMusicSynthesizer.CreateJukeboxTrack(_musicTrackIndexOverride.Value, sampleRate, channelCount)
+            : BackgroundMusicSynthesizer.Create(SceneMusicKind.Gameplay, sampleRate, channelCount);
+    }
+
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
     {
+        if (_demoPlayback is not null)
+        {
+            if (HasMeaningfulUserInput(input))
+            {
+                SceneAudio.PlayCancel(resources);
+                _previousInput = input;
+                return new TitleMenuScene();
+            }
+
+            OpenTyrian.Platform.InputSnapshot demoInput;
+            if (!_demoPlayback.TryAdvance(out demoInput))
+            {
+                _previousInput = input;
+                return new TitleMenuScene();
+            }
+
+            input = demoInput;
+        }
+
         bool cancelPressed = input.Cancel && !_previousInput.Cancel;
         bool confirmPressed = input.Confirm && !_previousInput.Confirm;
         bool upPressed = input.Up && !_previousInput.Up;
@@ -116,6 +166,18 @@ public sealed partial class GameplayScene : IScene
 
         _previousInput = input;
         return null;
+    }
+
+    private static bool HasMeaningfulUserInput(OpenTyrian.Platform.InputSnapshot input)
+    {
+        return input.Up ||
+            input.Down ||
+            input.Left ||
+            input.Right ||
+            input.Confirm ||
+            input.Cancel ||
+            input.PointerConfirm ||
+            input.PointerCancel;
     }
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)

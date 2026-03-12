@@ -79,15 +79,15 @@ public sealed class DataCubeScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (resources.FontRenderer is null)
         {
             return;
         }
 
-        resources.FontRenderer.DrawShadowText(surface, 160, 78, "Data Cubes", FontKind.Normal, FontAlignment.Center, 15, 0, black: false, shadowDistance: 1);
+        resources.FontRenderer.DrawText(surface, 160, 24, _sessionState.StartInfo.DisplayName, FontKind.Tiny, FontAlignment.Center, 14, 1, shadow: true);
+        resources.FontRenderer.DrawShadowText(surface, 160, 38, "Data Cubes", FontKind.Normal, FontAlignment.Center, 15, -3, black: false, shadowDistance: 2);
 
         if (_sessionState.CubeEntries.Count == 0)
         {
@@ -104,14 +104,14 @@ public sealed class DataCubeScene : IScene
         resources.FontRenderer.DrawText(
             surface,
             160,
-            90,
+            52,
             string.Format("entry {0}/{1}", _selectedEntryIndex + 1, _sessionState.CubeEntries.Count),
             FontKind.Tiny,
             FontAlignment.Center,
             14,
             0,
             shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 98, entry.Title, FontKind.Small, FontAlignment.Center, 15, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 62, entry.Title, FontKind.Small, FontAlignment.Center, 15, 0, shadow: true);
 
         for (int i = 0; i < VisibleContentLines; i++)
         {

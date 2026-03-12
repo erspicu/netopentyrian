@@ -2,6 +2,8 @@ namespace OpenTyrian.Core;
 
 public sealed class SceneResources
 {
+    public required OpenTyrian.Platform.IAssetLocator AssetLocator { get; init; }
+
     public required int PaletteCount { get; init; }
 
     public IAudioCueSink? AudioCueSink { get; init; }
