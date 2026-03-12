@@ -8,7 +8,8 @@ static class Program
     [STAThread]
     static void Main()
     {
-        ApplicationConfiguration.Initialize();
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
 
         string dataDirectory = TyrianDataDirectoryResolver.Resolve();
         var assetLocator = new FileSystemAssetLocator(dataDirectory);

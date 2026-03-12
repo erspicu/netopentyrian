@@ -7,7 +7,7 @@ public sealed class MenuState
     public MenuState(MenuDefinition definition, int selectedIndex = 0)
     {
         _definition = definition;
-        SelectedIndex = Math.Clamp(selectedIndex, 0, Math.Max(0, definition.Items.Count - 1));
+        SelectedIndex = Clamp(selectedIndex, 0, Math.Max(0, definition.Items.Count - 1));
     }
 
     public int SelectedIndex { get; private set; }
@@ -42,5 +42,15 @@ public sealed class MenuState
             SelectedIndex = SelectedIndex == _definition.Items.Count - 1 ? 0 : SelectedIndex + 1;
         }
         while (!_definition.Items[SelectedIndex].IsEnabled && SelectedIndex != start);
+    }
+
+    private static int Clamp(int value, int min, int max)
+    {
+        if (value < min)
+        {
+            return min;
+        }
+
+        return value > max ? max : value;
     }
 }

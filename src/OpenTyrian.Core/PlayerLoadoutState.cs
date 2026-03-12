@@ -34,21 +34,6 @@ public sealed class PlayerLoadoutState
     {
         return string.Join(
             " ",
-            SummaryOrder.Select(kind => $"{GetShortLabel(kind)}:{GetEquippedItemId(kind)}"));
-    }
-
-    private static string GetShortLabel(ItemCategoryKind kind)
-    {
-        return kind switch
-        {
-            ItemCategoryKind.Ship => "ship",
-            ItemCategoryKind.FrontWeapon => "front",
-            ItemCategoryKind.RearWeapon => "rear",
-            ItemCategoryKind.Shield => "shield",
-            ItemCategoryKind.Generator => "gen",
-            ItemCategoryKind.SidekickLeft => "left",
-            ItemCategoryKind.SidekickRight => "right",
-            _ => kind.ToString().ToLowerInvariant(),
-        };
+            SummaryOrder.Select(kind => $"{ItemNameResolver.GetShortCategoryLabel(kind)}:{GetEquippedItemId(kind)}"));
     }
 }

@@ -1,17 +1,25 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\OpenTyrian.Core\OpenTyrian.Core.csproj" />
     <ProjectReference Include="..\OpenTyrian.Platform\OpenTyrian.Platform.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="System.Memory">
+      <HintPath>C:\Program Files\dotnet\sdk\10.0.101\Sdks\Microsoft.NET.Sdk\tools\net472\System.Memory.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
 </Project>

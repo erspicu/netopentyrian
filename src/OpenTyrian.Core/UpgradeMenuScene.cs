@@ -61,17 +61,17 @@ public sealed class UpgradeMenuScene : IScene
         if (_mode == UpgradeMenuMode.CategorySelect && upPressed)
         {
             _selectedCategoryIndex = _selectedCategoryIndex == 0
-                ? _sessionState.ShopCategories.Count - 1
+                ? GetCategoryRowCount() - 1
                 : _selectedCategoryIndex - 1;
         }
 
         if (_mode == UpgradeMenuMode.CategorySelect && downPressed)
         {
-            _selectedCategoryIndex = (_selectedCategoryIndex + 1) % _sessionState.ShopCategories.Count;
+            _selectedCategoryIndex = (_selectedCategoryIndex + 1) % GetCategoryRowCount();
         }
 
-        ShopCategory category = _sessionState.ShopCategories[_selectedCategoryIndex];
-        int selectableCount = Math.Max(1, category.ItemCount + 1);
+        ShopCategory? category = GetSelectedCategory();
+        int selectableCount = Math.Max(1, (category?.ItemCount ?? 0) + 1);
 
         if (_mode == UpgradeMenuMode.ItemSelect && leftPressed)
         {
@@ -89,20 +89,29 @@ public sealed class UpgradeMenuScene : IScene
         {
             if (_mode == UpgradeMenuMode.CategorySelect)
             {
+                if (category is null)
+                {
+                    _previousInput = input;
+                    return new EpisodeSessionScene(_sessionState);
+                }
+
                 _mode = UpgradeMenuMode.ItemSelect;
                 _statusText = $"{category.DisplayName} submenu opened";
             }
-            else if (_selectedSlots[_selectedCategoryIndex] >= category.ItemCount)
+            else if (category is not null && _selectedSlots[_selectedCategoryIndex] >= category.ItemCount)
             {
                 _mode = UpgradeMenuMode.CategorySelect;
                 _statusText = $"{category.DisplayName} submenu closed";
             }
             else
             {
-                int itemId = category.ItemCount > 0 ? category.ItemIds[_selectedSlots[_selectedCategoryIndex]] : 0;
+                int itemId = category is not null && category.ItemCount > 0 ? category.ItemIds[_selectedSlots[_selectedCategoryIndex]] : 0;
                 _confirmedItemIds[_selectedCategoryIndex] = itemId;
-                _sessionState.EquipShopItem(category.Kind, itemId);
-                _statusText = $"{category.DisplayName} equipped item id {itemId}";
+                if (category is not null)
+                {
+                    _sessionState.EquipShopItem(category.Kind, itemId);
+                    _statusText = $"Equipped {ItemNameResolver.GetItemName(category.Kind, itemId, resources.ItemCatalog)}";
+                }
             }
         }
 
@@ -129,15 +138,25 @@ public sealed class UpgradeMenuScene : IScene
             return;
         }
 
-        for (int i = 0; i < _sessionState.ShopCategories.Count; i++)
+        for (int i = 0; i < GetCategoryRowCount(); i++)
         {
-            ShopCategory category = _sessionState.ShopCategories[i];
             bool selected = i == _selectedCategoryIndex;
             int y = 100 + (i * 12);
-            string label = $"{category.DisplayName} ({category.ItemCount})";
-            if (_mode == UpgradeMenuMode.ItemSelect && selected)
+            string label;
+
+            if (i >= _sessionState.ShopCategories.Count)
             {
-                label += " [open]";
+                label = "Done";
+            }
+            else
+            {
+                ShopCategory category = _sessionState.ShopCategories[i];
+                int equippedSummaryId = _sessionState.PlayerLoadout.GetEquippedItemId(category.Kind);
+                label = $"{category.DisplayName} ({category.ItemCount}) [{ItemNameResolver.GetCompactItemName(category.Kind, equippedSummaryId, resources.ItemCatalog)}]";
+                if (_mode == UpgradeMenuMode.ItemSelect && selected)
+                {
+                    label += " [open]";
+                }
             }
 
             if (selected)
@@ -150,7 +169,16 @@ public sealed class UpgradeMenuScene : IScene
             }
         }
 
-        ShopCategory selectedCategory = _sessionState.ShopCategories[_selectedCategoryIndex];
+        ShopCategory? selectedCategory = GetSelectedCategory();
+        if (selectedCategory is null)
+        {
+            resources.FontRenderer.DrawText(surface, 228, 120, "Return to episode session", FontKind.Small, FontAlignment.Center, 14, 1, shadow: true);
+            resources.FontRenderer.DrawText(surface, 228, 144, $"loadout: {_sessionState.PlayerLoadout.BuildSummary()}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+            resources.FontRenderer.DrawText(surface, 160, 192, _statusText, FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
+            resources.FontRenderer.DrawDark(surface, 160, 204, BuildFooterText(), FontKind.Tiny, FontAlignment.Center, black: false);
+            return;
+        }
+
         int selectedSlot = _selectedSlots[_selectedCategoryIndex];
         int selectedItemId = selectedCategory.ItemCount > 0 && selectedSlot < selectedCategory.ItemCount ? selectedCategory.ItemIds[selectedSlot] : 0;
         int? confirmedItemId = _confirmedItemIds[_selectedCategoryIndex];
@@ -162,11 +190,11 @@ public sealed class UpgradeMenuScene : IScene
         resources.FontRenderer.DrawText(surface, 228, 110, selectedCategory.DisplayName, FontKind.Small, FontAlignment.Center, 14, 1, shadow: true);
         resources.FontRenderer.DrawText(surface, 228, 132, $"row index: {selectedCategory.AvailabilityRowIndex + 1}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 228, 144, $"slot: {selectedSlot + 1}/{Math.Max(1, selectedCategory.ItemCount + 1)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 228, 156, $"item id: {selectedItemId}", FontKind.Tiny, FontAlignment.Center, 15, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 228, 168, $"prepared: {(confirmedItemId.HasValue ? confirmedItemId.Value : 0)} equipped:{equippedItemId}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 228, 156, ItemNameResolver.GetItemName(selectedCategory.Kind, selectedItemId, resources.ItemCatalog), FontKind.Tiny, FontAlignment.Center, 15, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 228, 168, $"prepared: {ItemNameResolver.GetCompactItemName(selectedCategory.Kind, confirmedItemId ?? 0, resources.ItemCatalog)} equipped: {ItemNameResolver.GetCompactItemName(selectedCategory.Kind, equippedItemId, resources.ItemCatalog)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 228, 180, $"preview: {rowPreview}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
 
-        RenderItemSubmenu(surface, resources.FontRenderer, selectedCategory, selectedSlot, confirmedItemId, equippedItemId, _mode == UpgradeMenuMode.ItemSelect);
+        RenderItemSubmenu(surface, resources.FontRenderer, resources.ItemCatalog, selectedCategory, selectedSlot, confirmedItemId, equippedItemId, _mode == UpgradeMenuMode.ItemSelect);
 
         resources.FontRenderer.DrawText(surface, 160, 192, _statusText, FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
         resources.FontRenderer.DrawDark(surface, 160, 204, BuildFooterText(), FontKind.Tiny, FontAlignment.Center, black: false);
@@ -183,6 +211,18 @@ public sealed class UpgradeMenuScene : IScene
             _selectedSlots[i] = equippedSlot >= 0 ? equippedSlot : 0;
             _confirmedItemIds[i] = equippedItemId != 0 ? equippedItemId : null;
         }
+    }
+
+    private int GetCategoryRowCount()
+    {
+        return _sessionState.ShopCategories.Count + 1;
+    }
+
+    private ShopCategory? GetSelectedCategory()
+    {
+        return _selectedCategoryIndex >= 0 && _selectedCategoryIndex < _sessionState.ShopCategories.Count
+            ? _sessionState.ShopCategories[_selectedCategoryIndex]
+            : null;
     }
 
     private static int FindItemSlot(ShopCategory category, int itemId)
@@ -206,6 +246,7 @@ public sealed class UpgradeMenuScene : IScene
     private static void RenderItemSubmenu(
         IndexedFrameBuffer surface,
         TyrianFontRenderer fontRenderer,
+        ItemCatalog? itemCatalog,
         ShopCategory selectedCategory,
         int selectedSlot,
         int? confirmedItemId,
@@ -240,7 +281,7 @@ public sealed class UpgradeMenuScene : IScene
                 int itemId = selectedCategory.ItemIds[rowIndex];
                 bool isPrepared = confirmedItemId.HasValue && confirmedItemId.Value == itemId;
                 bool isEquipped = equippedItemId == itemId;
-                label = BuildItemLabel(selectedCategory, itemId, isPrepared, isEquipped);
+                label = BuildItemLabel(itemCatalog, selectedCategory, itemId, isPrepared, isEquipped);
                 hue = isSelected ? (byte)15 : (isPrepared ? (byte)14 : isEquipped ? (byte)12 : (byte)13);
                 value = isSelected ? 4 : (isPrepared ? 2 : isEquipped ? 1 : 0);
             }
@@ -297,36 +338,24 @@ public sealed class UpgradeMenuScene : IScene
     private string BuildFooterText()
     {
         return _mode == UpgradeMenuMode.CategorySelect
-            ? "Up/Down category  Enter open submenu  Esc back"
+            ? "Up/Down category  Enter open/done  Esc back"
             : "Left/Right item  Enter equip/done  Esc category list";
     }
 
-    private static string BuildItemLabel(ShopCategory category, int itemId, bool isPrepared, bool isEquipped)
+    private static string BuildItemLabel(ItemCatalog? itemCatalog, ShopCategory category, int itemId, bool isPrepared, bool isEquipped)
     {
-        string prefix = category.Kind switch
-        {
-            ItemCategoryKind.Ship => "Ship",
-            ItemCategoryKind.FrontWeapon => "Front",
-            ItemCategoryKind.RearWeapon => "Rear",
-            ItemCategoryKind.Shield => "Shield",
-            ItemCategoryKind.SidekickLeft => "Left",
-            ItemCategoryKind.SidekickRight => "Right",
-            ItemCategoryKind.Generator => "Gen",
-            ItemCategoryKind.Special => "Spec",
-            ItemCategoryKind.SidekickOptions => "Option",
-            _ => "Item",
-        };
+        string itemName = ItemNameResolver.GetCompactItemName(category.Kind, itemId, itemCatalog);
 
         if (isPrepared)
         {
-            return $"* {prefix} {itemId}";
+            return $"* {itemName}";
         }
 
         if (isEquipped)
         {
-            return $"+ {prefix} {itemId}";
+            return $"+ {itemName}";
         }
 
-        return $"{prefix} {itemId}";
+        return itemName;
     }
 }

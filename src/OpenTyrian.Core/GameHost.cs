@@ -17,6 +17,7 @@ public sealed class GameHost
     private TyrianFontRenderer? _fontRenderer;
     private IReadOnlyList<EpisodeInfo> _episodes = Array.Empty<EpisodeInfo>();
     private GameplayTextInfo? _gameplayText;
+    private ItemCatalog? _itemCatalog;
 
     public GameHost(IAssetLocator assetLocator, IInputSource inputSource)
     {
@@ -32,6 +33,7 @@ public sealed class GameHost
         LoadFonts();
         LoadEpisodes();
         LoadGameplayText();
+        LoadItemCatalog();
     }
 
     public IndexedFrameBuffer IndexedFrameBuffer { get; }
@@ -87,6 +89,7 @@ public sealed class GameHost
             FontRenderer = _fontRenderer,
             Episodes = _episodes,
             GameplayText = _gameplayText,
+            ItemCatalog = _itemCatalog,
         };
     }
 
@@ -231,5 +234,17 @@ public sealed class GameHost
     private void LoadGameplayText()
     {
         _gameplayText = GameplayTextLoader.Load(_assetLocator);
+    }
+
+    private void LoadItemCatalog()
+    {
+        try
+        {
+            _itemCatalog = ItemCatalogLoader.Load(_assetLocator);
+        }
+        catch
+        {
+            _itemCatalog = null;
+        }
     }
 }

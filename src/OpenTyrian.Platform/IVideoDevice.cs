@@ -1,3 +1,5 @@
+using System;
+
 namespace OpenTyrian.Platform;
 
 public interface IVideoDevice

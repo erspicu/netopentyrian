@@ -96,7 +96,7 @@ public static class EpisodeScriptLoader
         int? targetMainLevel = null;
         if (kind is EpisodeCommandKind.SectionJump or EpisodeCommandKind.TwoPlayerSectionJump)
         {
-            string numericPart = value.Length > 3 ? value[3..] : string.Empty;
+            string numericPart = value.Length > 3 ? value.Substring(3) : string.Empty;
             if (int.TryParse(numericPart, out int parsed))
             {
                 targetMainLevel = parsed;
@@ -120,7 +120,7 @@ public static class EpisodeScriptLoader
                 }
 
                 blockLines.Add(line);
-                string numericSource = line.Length > 8 ? line[8..] : string.Empty;
+                string numericSource = line.Length > 8 ? line.Substring(8) : string.Empty;
                 IReadOnlyList<int> row = ParseIntRow(numericSource);
                 rows.Add(row);
                 maxPerRow.Add(row.Count);
@@ -199,12 +199,12 @@ public static class EpisodeScriptLoader
             return false;
         }
 
-        if (!int.TryParse(text[start..index], out value))
+        if (!int.TryParse(text.Substring(start, index - start), out value))
         {
             return false;
         }
 
-        text = text[index..];
+        text = text.Substring(index);
         return true;
     }
 }

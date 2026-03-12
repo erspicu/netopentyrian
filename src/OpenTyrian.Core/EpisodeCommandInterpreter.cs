@@ -79,7 +79,7 @@ public static class EpisodeCommandInterpreter
 
     private static bool TryParseCommandInt(string rawText, out int value)
     {
-        string numericPart = rawText.Length > 3 ? rawText[3..] : string.Empty;
+        string numericPart = rawText.Length > 3 ? rawText.Substring(3) : string.Empty;
         return int.TryParse(numericPart, out value);
     }
 }

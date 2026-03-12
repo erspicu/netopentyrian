@@ -79,10 +79,11 @@ public sealed class TyrianDataStream : IDisposable
 
     public void ReadExactly(Span<byte> buffer)
     {
+        byte[] temp = new byte[buffer.Length];
         int totalRead = 0;
-        while (totalRead < buffer.Length)
+        while (totalRead < temp.Length)
         {
-            int read = _stream.Read(buffer[totalRead..]);
+            int read = _stream.Read(temp, totalRead, temp.Length - totalRead);
             if (read <= 0)
             {
                 throw new EndOfStreamException("Unexpected end of stream while reading data.");
@@ -90,6 +91,8 @@ public sealed class TyrianDataStream : IDisposable
 
             totalRead += read;
         }
+
+        temp.AsSpan().CopyTo(buffer);
     }
 
     public void Seek(long offset, SeekOrigin origin)

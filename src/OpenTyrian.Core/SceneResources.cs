@@ -17,4 +17,6 @@ public sealed class SceneResources
     public required IReadOnlyList<EpisodeInfo> Episodes { get; init; }
 
     public GameplayTextInfo? GameplayText { get; init; }
+
+    public ItemCatalog? ItemCatalog { get; init; }
 }
