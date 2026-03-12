@@ -64,7 +64,7 @@ public sealed class OptionsScene : IScene
         {
             SceneAudio.PlayConfirm(resources);
             _previousInput = input;
-            return new FullGameMenuScene(_sessionState);
+            return ExecuteSelectedItem(resources);
         }
 
         _previousInput = input;
@@ -93,6 +93,21 @@ public sealed class OptionsScene : IScene
         _menuState = new MenuState(definition, selectedIndex: definition.Items.Count > 0 ? definition.Items.Count - 1 : 0);
     }
 
+    private IScene ExecuteSelectedItem(SceneResources resources)
+    {
+        if (_menuState is null)
+        {
+            return new FullGameMenuScene(_sessionState);
+        }
+
+        return _menuState.SelectedItem.Id switch
+        {
+            "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load),
+            "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save),
+            _ => new FullGameMenuScene(_sessionState),
+        };
+    }
+
     private static MenuDefinition CreateDefinition(GameplayTextInfo? gameplayText)
     {
         IList<string> labels = gameplayText?.OptionsMenu ?? [ "Options", "Load Game", "Save Game", string.Empty, string.Empty, "Joystick Setup", "Keyboard Setup", "Done" ];
@@ -108,15 +123,13 @@ public sealed class OptionsScene : IScene
                 {
                     Id = "load_game",
                     Label = GetLabel(labels, 1, "Load Game"),
-                    Description = "Load/save flow is not wired yet.",
-                    IsEnabled = false,
+                    Description = "Browse decoded tyrian.sav slots.",
                 },
                 new MenuItemDefinition
                 {
                     Id = "save_game",
                     Label = GetLabel(labels, 2, "Save Game"),
-                    Description = "Load/save flow is not wired yet.",
-                    IsEnabled = false,
+                    Description = "Read-only save slot browser for now.",
                 },
                 new MenuItemDefinition
                 {
@@ -150,5 +163,34 @@ public sealed class OptionsScene : IScene
         }
 
         return fallback;
+    }
+
+    private static SaveSlotCatalog BuildFallbackCatalog()
+    {
+        SaveSlotInfo[] slots = new SaveSlotInfo[22];
+        for (int i = 0; i < slots.Length; i++)
+        {
+            slots[i] = new SaveSlotInfo
+            {
+                SlotIndex = i + 1,
+                PageIndex = i / 11,
+                IsEmpty = true,
+                Name = "EMPTY SLOT",
+                LevelName = "-----",
+                LevelNumber = 0,
+                EpisodeNumber = 0,
+                CubeCount = 0,
+                Cash = 0,
+                Cash2 = 0,
+            };
+        }
+
+        return new SaveSlotCatalog
+        {
+            SourcePath = string.Empty,
+            HasSaveFile = false,
+            IsValid = false,
+            Slots = slots,
+        };
     }
 }

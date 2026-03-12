@@ -7,6 +7,7 @@ public sealed class GameHost : IAudioCueSink
     private readonly IAssetLocator _assetLocator;
     private readonly IInputSource _inputSource;
     private readonly IAudioDevice _audioDevice;
+    private readonly IUserFileStore _userFileStore;
     private readonly Dictionary<AudioCueKind, AudioCueSample> _audioCues = new();
     private IScene _scene;
     private double _timeSeconds;
@@ -20,12 +21,14 @@ public sealed class GameHost : IAudioCueSink
     private IList<EpisodeInfo> _episodes = new EpisodeInfo[0];
     private GameplayTextInfo? _gameplayText;
     private ItemCatalog? _itemCatalog;
+    private SaveSlotCatalog? _saveSlots;
 
-    public GameHost(IAssetLocator assetLocator, IInputSource inputSource, IAudioDevice audioDevice)
+    public GameHost(IAssetLocator assetLocator, IInputSource inputSource, IAudioDevice audioDevice, IUserFileStore userFileStore)
     {
         _assetLocator = assetLocator;
         _inputSource = inputSource;
         _audioDevice = audioDevice;
+        _userFileStore = userFileStore;
         _scene = new TitleScene();
         IndexedFrameBuffer = new IndexedFrameBuffer(320, 200);
         FrameBuffer = new ArgbFrameBuffer(320, 200);
@@ -37,6 +40,7 @@ public sealed class GameHost : IAudioCueSink
         LoadEpisodes();
         LoadGameplayText();
         LoadItemCatalog();
+        LoadSaveSlots();
         InitializeAudio();
     }
 
@@ -87,6 +91,7 @@ public sealed class GameHost : IAudioCueSink
         {
             PaletteCount = PaletteCount,
             AudioCueSink = this,
+            SaveSlots = _saveSlots,
             TitleImage = _titleImage,
             TestPcxImage = _testPcxImage,
             TestSpriteSheet = _testSpriteSheet,
@@ -250,6 +255,18 @@ public sealed class GameHost : IAudioCueSink
         catch
         {
             _itemCatalog = null;
+        }
+    }
+
+    private void LoadSaveSlots()
+    {
+        try
+        {
+            _saveSlots = SaveSlotCatalogLoader.Load(_userFileStore);
+        }
+        catch
+        {
+            _saveSlots = null;
         }
     }
 

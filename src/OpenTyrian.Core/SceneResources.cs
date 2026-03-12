@@ -6,6 +6,8 @@ public sealed class SceneResources
 
     public IAudioCueSink? AudioCueSink { get; init; }
 
+    public SaveSlotCatalog? SaveSlots { get; init; }
+
     public PicImage? TitleImage { get; init; }
 
     public PcxImage? TestPcxImage { get; init; }

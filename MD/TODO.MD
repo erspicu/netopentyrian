@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 62%
+總完成度(估算): 約 63%
 
 ## 目標
 
@@ -482,3 +482,6 @@
 - `GameHost` 啟動狀態列現在會反映 audio backend 初始化結果，但尚未接上真正的 menu/game PCM、混音與 OPL
 - 已新增 `AudioCueKind` / `IAudioCueSink` / `AudioCueSynthesizer`，`GameHost` 目前會預先合成最小 PCM cue 並透過 `IAudioDevice.SubmitSamples()` 提交
 - title / main menu / episode select / full-game hub / next-level / ship specs / options / quit confirm / data cube / upgrade shop / session debug 等已可玩的 scene 現在都會對 cursor/confirm/cancel 送出最小提示音
+- 已新增 `IUserFileStore` / `FileSystemUserFileStore`，目前先把 user file root 收斂到執行檔 base directory，為後續 `tyrian.sav` / `tyrian.cfg` 路徑切割鋪底
+- 已新增 `SaveSlotCatalogLoader`，目前可解碼並驗證 `tyrian.sav` checksum，並抽出 22 個 save slot 的 name / level / episode / cube / cash metadata
+- `OptionsScene` 的 `Load Game / Save Game` 已從停用改成可進入 `SaveSlotsScene`，目前先提供 read-only slot browser，不直接寫入或載入遊戲狀態
