@@ -88,8 +88,7 @@ public sealed class FullGameMenuScene : IScene
     {
         MenuDefinition definition = CreateDefinition(resources.GameplayText, _sessionState);
         EnsureMenuState(definition);
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (_menuState is null || resources.FontRenderer is null)
         {
@@ -99,33 +98,33 @@ public sealed class FullGameMenuScene : IScene
         resources.FontRenderer.DrawText(
             surface,
             160,
-            86,
+            26,
             string.Format(
-                "{0}  level:{1}/{2}  cash:{3}  cubes:{4}",
+                "{0}  level:{1}/{2}  cash:{3}",
                 _sessionState.StartInfo.DisplayName,
                 _sessionState.CurrentLevelNumber,
                 Math.Max(1, _sessionState.MainLevelEntries.Count),
-                _sessionState.Cash,
-                _sessionState.CubeEntries.Count),
+                _sessionState.Cash),
             FontKind.Tiny,
             FontAlignment.Center,
             14,
             1,
             shadow: true);
-        TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);
-        resources.FontRenderer.DrawDark(
+        resources.FontRenderer.DrawText(
             surface,
             160,
-            194,
+            36,
             string.Format(
-                "last exec: cmds={0} changed={1} jumped={2} shop={3}",
-                _lastExecutionResult.ExecutedCommands,
-                _lastExecutionResult.StateChanged,
-                _lastExecutionResult.Jumped,
-                _lastExecutionResult.ShopRequested),
+                "assets:{0}  total:{1}  cubes:{2}",
+                _sessionState.GetTotalAssetValue(resources.ItemCatalog),
+                _sessionState.GetTotalScore(resources.ItemCatalog),
+                _sessionState.CubeEntries.Count),
             FontKind.Tiny,
             FontAlignment.Center,
-            black: false);
+            13,
+            0,
+            shadow: true);
+        TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);
     }
 
     private IScene? ExecuteSelectedItem()
@@ -142,7 +141,6 @@ public sealed class FullGameMenuScene : IScene
             "upgrade_ship" => new UpgradeMenuScene(_sessionState, returnToFullGameMenu: true),
             "options" => new OptionsScene(_sessionState),
             "next_level" => new LevelSelectScene(_sessionState),
-            "session_state" => new EpisodeSessionScene(_sessionState, returnToFullGameMenu: true),
             "quit_episode" => new QuitConfirmationScene(_sessionState),
             _ => null,
         };
@@ -155,7 +153,13 @@ public sealed class FullGameMenuScene : IScene
             return;
         }
 
-        _menuState = new MenuState(definition);
+        int selectedIndex = 0;
+        while (selectedIndex < definition.Items.Count && !definition.Items[selectedIndex].IsEnabled)
+        {
+            selectedIndex++;
+        }
+
+        _menuState = new MenuState(definition, selectedIndex >= definition.Items.Count ? 0 : selectedIndex);
     }
 
     private static MenuDefinition CreateDefinition(GameplayTextInfo? gameplayText, EpisodeSessionState sessionState)
@@ -166,7 +170,7 @@ public sealed class FullGameMenuScene : IScene
         return new MenuDefinition
         {
             Title = title,
-            Footer = "Esc returns to episode select  Mouse hover/click enabled",
+            Footer = "Esc returns to episode select",
             Items =
             [
                 new MenuItemDefinition
@@ -176,6 +180,7 @@ public sealed class FullGameMenuScene : IScene
                     Description = sessionState.CubeEntries.Count > 0
                         ? string.Format("Read {0} decoded data cube entries.", sessionState.CubeEntries.Count)
                         : "No data cubes decoded yet.",
+                    IsEnabled = sessionState.CubeEntries.Count > 0,
                 },
                 new MenuItemDefinition
                 {
@@ -203,12 +208,6 @@ public sealed class FullGameMenuScene : IScene
                     Label = labels.Count > 5 ? labels[5] : "Next Level",
                     Description = string.Format("Choose and launch from {0} parsed main-level sections.", sessionState.MainLevelEntries.Count),
                     IsEnabled = sessionState.MainLevelEntries.Count > 0,
-                },
-                new MenuItemDefinition
-                {
-                    Id = "session_state",
-                    Label = "Session State",
-                    Description = "Open the current debug view for script/session metadata.",
                 },
                 new MenuItemDefinition
                 {

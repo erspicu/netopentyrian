@@ -74,7 +74,14 @@ public sealed class DifficultySelectScene : IScene, IScenePresentation
             _previousInput = input;
 
             EpisodeSessionState? sessionState = TitleFlowHelper.CreateSession(_episode, _startMode, _selectedIndex + 1);
-            return sessionState is null ? null : new FullGameMenuScene(sessionState);
+            if (sessionState is null)
+            {
+                return null;
+            }
+
+            return _startMode == GameStartMode.FullGame
+                ? new FullGameMenuScene(sessionState)
+                : new ArcadeMenuScene(sessionState);
         }
 
         _previousInput = input;

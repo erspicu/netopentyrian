@@ -3,17 +3,26 @@ namespace OpenTyrian.Core;
 public sealed class OptionsScene : IScene
 {
     private readonly EpisodeSessionState _sessionState;
+    private readonly Func<IScene> _returnSceneFactory;
+    private readonly bool _limitedMode;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private MenuState? _menuState;
 
     public OptionsScene(EpisodeSessionState sessionState)
+        : this(sessionState, delegate { return new FullGameMenuScene(sessionState); }, limitedMode: false)
+    {
+    }
+
+    public OptionsScene(EpisodeSessionState sessionState, Func<IScene> returnSceneFactory, bool limitedMode)
     {
         _sessionState = sessionState;
+        _returnSceneFactory = returnSceneFactory;
+        _limitedMode = limitedMode;
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
     {
-        MenuDefinition definition = CreateDefinition(resources.GameplayText);
+        MenuDefinition definition = CreateDefinition(resources.GameplayText, _limitedMode);
         EnsureMenuState(definition);
         if (_menuState is null)
         {
@@ -45,7 +54,7 @@ public sealed class OptionsScene : IScene
         {
             SceneAudio.PlayCancel(resources);
             _previousInput = input;
-            return new FullGameMenuScene(_sessionState);
+            return _returnSceneFactory();
         }
 
         if (upPressed)
@@ -73,12 +82,25 @@ public sealed class OptionsScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        MenuDefinition definition = CreateDefinition(resources.GameplayText);
+        MenuDefinition definition = CreateDefinition(resources.GameplayText, _limitedMode);
         EnsureMenuState(definition);
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
         if (_menuState is not null)
         {
+            if (resources.FontRenderer is not null)
+            {
+                resources.FontRenderer.DrawText(
+                    surface,
+                    160,
+                    26,
+                    _limitedMode ? "Arcade Options" : _sessionState.StartInfo.DisplayName,
+                    FontKind.Tiny,
+                    FontAlignment.Center,
+                    14,
+                    1,
+                    shadow: true);
+            }
+
             TitleScreenRenderer.RenderMenuOverlay(surface, resources.FontRenderer, definition, _menuState);
         }
     }
@@ -97,23 +119,53 @@ public sealed class OptionsScene : IScene
     {
         if (_menuState is null)
         {
-            return new FullGameMenuScene(_sessionState);
+            return _returnSceneFactory();
         }
 
         return _menuState.SelectedItem.Id switch
         {
-            "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load, delegate { return new OptionsScene(_sessionState); }),
-            "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save, delegate { return new OptionsScene(_sessionState); }),
-            "joystick" => new JoystickSetupScene(_sessionState),
-            "keyboard" => new KeyboardSetupScene(_sessionState),
-            _ => new FullGameMenuScene(_sessionState),
+            "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load, delegate { return new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode); }),
+            "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save, delegate { return new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode); }),
+            "joystick" => new JoystickSetupScene(_sessionState, _returnSceneFactory, _limitedMode),
+            "keyboard" => new KeyboardSetupScene(_sessionState, _returnSceneFactory, _limitedMode),
+            _ => _returnSceneFactory(),
         };
     }
 
-    private static MenuDefinition CreateDefinition(GameplayTextInfo? gameplayText)
+    private static MenuDefinition CreateDefinition(GameplayTextInfo? gameplayText, bool limitedMode)
     {
         IList<string> labels = gameplayText?.OptionsMenu ?? [ "Options", "Load Game", "Save Game", string.Empty, string.Empty, "Joystick Setup", "Keyboard Setup", "Done" ];
         string title = labels.Count > 0 ? labels[0] : "Options";
+
+        if (limitedMode)
+        {
+            return new MenuDefinition
+            {
+                Title = title,
+                Footer = "Esc returns to arcade menu",
+                Items =
+                [
+                    new MenuItemDefinition
+                    {
+                        Id = "joystick",
+                        Label = GetLabel(labels, 5, "Joystick Setup"),
+                        Description = "Inspect XInput/DirectInput status and rebind the six core buttons.",
+                    },
+                    new MenuItemDefinition
+                    {
+                        Id = "keyboard",
+                        Label = GetLabel(labels, 6, "Keyboard Setup"),
+                        Description = "Inspect and rebind the six core menu/game buttons.",
+                    },
+                    new MenuItemDefinition
+                    {
+                        Id = "done",
+                        Label = GetLabel(labels, 7, "Done"),
+                        Description = "Return to arcade menu.",
+                    },
+                ],
+            };
+        }
 
         return new MenuDefinition
         {

@@ -15,12 +15,21 @@ public sealed class JoystickSetupScene : IScene
     };
 
     private readonly EpisodeSessionState _sessionState;
+    private readonly Func<IScene> _returnSceneFactory;
+    private readonly bool _limitedMode;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _selectedIndex;
 
     public JoystickSetupScene(EpisodeSessionState sessionState)
+        : this(sessionState, delegate { return new FullGameMenuScene(sessionState); }, limitedMode: false)
+    {
+    }
+
+    public JoystickSetupScene(EpisodeSessionState sessionState, Func<IScene> returnSceneFactory, bool limitedMode)
     {
         _sessionState = sessionState;
+        _returnSceneFactory = returnSceneFactory;
+        _limitedMode = limitedMode;
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
@@ -35,7 +44,7 @@ public sealed class JoystickSetupScene : IScene
         if (configurator is null || !configurator.IsSupported)
         {
             _previousInput = input;
-            return cancelPressed ? new OptionsScene(_sessionState) : null;
+            return cancelPressed ? new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode) : null;
         }
 
         int rowCount = ConfigurableButtons.Length + 4;
@@ -64,7 +73,7 @@ public sealed class JoystickSetupScene : IScene
 
             SceneAudio.PlayCancel(resources);
             _previousInput = input;
-            return new OptionsScene(_sessionState);
+            return new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode);
         }
 
         if (configurator.PendingBinding is null)
@@ -95,8 +104,7 @@ public sealed class JoystickSetupScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (resources.FontRenderer is null)
         {
@@ -165,7 +173,7 @@ public sealed class JoystickSetupScene : IScene
             return null;
         }
 
-        return new OptionsScene(_sessionState);
+        return new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode);
     }
 
     private void DrawRow(IndexedFrameBuffer surface, TyrianFontRenderer fontRenderer, int rowIndex, string label)

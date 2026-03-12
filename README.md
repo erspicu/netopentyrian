@@ -74,6 +74,8 @@
 - `Save Game` 不再直接覆寫預設名稱；WinForms 已補上最小文字輸入佇列，存檔畫面可編輯 14 字元 ASCII slot name，再寫回 `tyrian.sav`
 - `Options -> Keyboard Setup` 現在可進入，會顯示目前六個核心按鍵綁定並支援最小 rebind / reset defaults
 - `Options -> Joystick Setup` 現在可進入，WinForms 輸入層已改成輪詢 `XInput + DirectInput`，並可對六個核心按鍵做最小手把重綁
+- `Arcade` 已拆出獨立 `ArcadeMenuScene`，不再和 `Full Game` 共用同一個 hub；`Options` 也會依模式切到 full-game 或 limited arcade variant
+- `FullGameMenuScene` 已移除 `Session State` 這類 debug 主選項，畫面改回較接近 item/menu 的主流程入口
 - 手把綁定目前先保存在執行期間記憶體內；之後會再依 `tool/aprnes.ini` 類似的 key/value 格式補上 ini 讀寫
 
 目前主體移植已收斂到可啟動、可操作 menu、可進關卡、可存讀檔、可播放原版 `music.mus` 場景音樂與最小 cue、可用鍵鼠手把操作的狀態。

@@ -58,7 +58,7 @@ public sealed partial class GameplayScene
             default:
                 return _returnToTitleOnExit
                     ? new TitleMenuScene()
-                    : new FullGameMenuScene(_sessionState);
+                    : CreateReturnMenuScene();
         }
     }
 
@@ -80,7 +80,14 @@ public sealed partial class GameplayScene
 
         return _returnToTitleOnExit
             ? new TitleMenuScene()
-            : new FullGameMenuScene(_sessionState);
+            : CreateReturnMenuScene();
+    }
+
+    private IScene CreateReturnMenuScene()
+    {
+        return _sessionState.StartMode == GameStartMode.FullGame
+            ? new FullGameMenuScene(_sessionState)
+            : new ArcadeMenuScene(_sessionState);
     }
 
     private void EnsureCombatState(ItemCatalog? itemCatalog)

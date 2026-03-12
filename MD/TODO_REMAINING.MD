@@ -2,19 +2,19 @@
 
 最後更新: 2026-03-13  
 目前狀態: 以這份文件作為後續真實進度基線  
-總完成度(估算): 約 90%
+總完成度(估算): 約 92%
 
 ## 百分比摘要
 
-- 整體完成度(估算): `90%`
+- 整體完成度(估算): `92%`
 - 啟動與 title 主樹: `72%`
-- New Game 子樹: `54%`
+- New Game 子樹: `68%`
 - Title 其他分支: `76%`
 - Title Setup 與 Jukebox: `82%`
 - 音樂與音效時機: `84%`
-- Full Game / In-game 主流程: `45%`
-- Full Game hub / item screen parity: `40%`
-- 視覺與版面: `55%`
+- Full Game / In-game 主流程: `55%`
+- Full Game hub / item screen parity: `52%`
+- 視覺與版面: `58%`
 - 資料與存檔對齊: `60%`
 - Input / Demo / Regression: `54%`
 
@@ -42,9 +42,10 @@
    - `Instructions` 已補成 topic/page 流程，但版面仍是近似實作
    - `Demo` 仍是最小 playable slice，不是原版 record/replay
    - `Load Game / Setup / High Scores` 雖已可從 title 正確進入，細節仍需持續校正
-4. `New Game` 樹不完整
-   - 缺 `difficultySelect()`
-   - `gameplaySelect()` 目前掛在錯的位置
+4. `New Game` 樹仍有未完全對齊部分
+   - `difficultySelect()` 已補上
+   - `arcade` 已拆出獨立 menu，不再直接掉進 full-game hub
+   - 仍缺更接近原版的 arcade/item/menu 細節
 5. `Jukebox` 已可切到真實 `music.mus` 曲目，但畫面與操作細節仍未完全對齊原版
 6. `JE_main()` 只做了最小 gameplay slice，不是原版完整主流程
 
@@ -71,13 +72,14 @@
 
 ### 第 2 組: New Game 子樹
 
-狀態: 進行中，已達約 54%
+狀態: 進行中，已達約 68%
 
 1. `Start New Game` -> `gameplaySelect()`
 2. `gameplaySelect()` -> `episodeSelect()`
 3. `episodeSelect()` -> `difficultySelect()`
 4. `difficultySelect()` 完成後才建立 session 並進 full game / arcade 流程
-5. arcade / full-game 初始 cash、player count、difficulty 狀態補齊
+5. 已補 `difficulty -> full-game hub / arcade menu` 正確分流
+6. arcade / full-game 初始 cash、player count、difficulty 狀態補齊
 
 驗收標準:
 - `New Game` 流程順序與原版一致
@@ -155,19 +157,20 @@
 
 ### 第 7 組: Full Game hub / item screen / menu parity
 
-狀態: 進行中，已達約 60%
+狀態: 進行中，已達約 52%
 
-1. `FullGameMenuScene` 目前偏 debug hub，需要更接近原版 item screen
-2. `Session State` 這種 debug 項目之後要退出主流程
+1. `FullGameMenuScene` 已移除 `Session State` 這類 debug 主選項，並改回較接近 item/menu 的畫面
+2. `FullGameMenuScene` 仍需要更接近原版 item screen 細節與子選單佈局
 3. `Ship Specs / Upgrade / Options / Next Level / Quit` 順序與返回路徑要更貼近原版
-4. `Load Game / Save Game` 與 title/in-game options 的分工要再整理
+4. `Arcade` 已補獨立 `ArcadeMenuScene`，`Options` 也拆出 limited arcade variant
+5. `Load Game / Save Game` 與 title/in-game options 的分工要再整理
 
 驗收標準:
 - full-game hub 不再像 debug launcher
 
 ### 第 8 組: 視覺與版面
 
-狀態: 進行中，已達約 45%
+狀態: 進行中，已達約 58%
 
 1. title/menu 目前仍有 debug 文案與宿主資訊
 2. WinForms status bar 應淡出或只在錯誤狀態顯示

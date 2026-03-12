@@ -15,12 +15,21 @@ public sealed class KeyboardSetupScene : IScene
     };
 
     private readonly EpisodeSessionState _sessionState;
+    private readonly Func<IScene> _returnSceneFactory;
+    private readonly bool _limitedMode;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _selectedIndex;
 
     public KeyboardSetupScene(EpisodeSessionState sessionState)
+        : this(sessionState, delegate { return new FullGameMenuScene(sessionState); }, limitedMode: false)
+    {
+    }
+
+    public KeyboardSetupScene(EpisodeSessionState sessionState, Func<IScene> returnSceneFactory, bool limitedMode)
     {
         _sessionState = sessionState;
+        _returnSceneFactory = returnSceneFactory;
+        _limitedMode = limitedMode;
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
@@ -35,7 +44,7 @@ public sealed class KeyboardSetupScene : IScene
         if (configurator is null)
         {
             _previousInput = input;
-            return cancelPressed ? new OptionsScene(_sessionState) : null;
+            return cancelPressed ? new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode) : null;
         }
 
         int rowCount = ConfigurableButtons.Length + 2;
@@ -64,7 +73,7 @@ public sealed class KeyboardSetupScene : IScene
 
             SceneAudio.PlayCancel(resources);
             _previousInput = input;
-            return new OptionsScene(_sessionState);
+            return new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode);
         }
 
         if (configurator.PendingBinding is null)
@@ -97,7 +106,7 @@ public sealed class KeyboardSetupScene : IScene
                     return null;
                 }
 
-                return new OptionsScene(_sessionState);
+                return new OptionsScene(_sessionState, _returnSceneFactory, _limitedMode);
             }
         }
 
@@ -107,8 +116,7 @@ public sealed class KeyboardSetupScene : IScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderBackground(surface, resources, timeSeconds);
-        TitleScreenRenderer.RenderTitleOverlay(surface, resources.FontRenderer, resources.PaletteCount);
+        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
 
         if (resources.FontRenderer is null)
         {
