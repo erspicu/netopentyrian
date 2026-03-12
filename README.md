@@ -67,6 +67,8 @@
 - 已新增 `IUserFileStore` 與 `tyrian.sav` 解碼路徑，`Options` 底下的 `Load Game / Save Game` 現在可進入 read-only slot browser
 - load/save scene 目前只會瀏覽與顯示 slot metadata，不會真的載入或寫回存檔
 - `Options -> Keyboard Setup` 現在可進入，會顯示目前六個核心按鍵綁定並支援最小 rebind / reset defaults
+- `Options -> Joystick Setup` 現在可進入，WinForms 輸入層已改成輪詢 `XInput + DirectInput`，並可對六個核心按鍵做最小手把重綁
+- 手把綁定目前先保存在執行期間記憶體內；之後會再依 `tool/aprnes.ini` 類似的 key/value 格式補上 ini 讀寫
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 

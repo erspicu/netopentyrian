@@ -55,7 +55,7 @@ public sealed class MainForm : Form
         _lastFrameUtc = DateTime.UtcNow;
 
         UpdateStatus();
-        Shown += (_, _) => _frameTimer.Start();
+        Shown += OnShown;
         FormClosed += OnFormClosed;
         KeyDown += OnKeyDown;
         KeyUp += OnKeyUp;
@@ -86,8 +86,15 @@ public sealed class MainForm : Form
     {
         _frameTimer.Stop();
         _frameTimer.Dispose();
+        _inputSource.Shutdown();
         _gameHost.Shutdown();
         _videoDevice.Dispose();
+    }
+
+    private void OnShown(object? sender, EventArgs e)
+    {
+        _inputSource.InitializeJoystick(Handle);
+        _frameTimer.Start();
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

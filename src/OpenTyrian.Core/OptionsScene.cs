@@ -104,6 +104,7 @@ public sealed class OptionsScene : IScene
         {
             "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load),
             "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save),
+            "joystick" => new JoystickSetupScene(_sessionState),
             "keyboard" => new KeyboardSetupScene(_sessionState),
             _ => new FullGameMenuScene(_sessionState),
         };
@@ -136,8 +137,7 @@ public sealed class OptionsScene : IScene
                 {
                     Id = "joystick",
                     Label = GetLabel(labels, 5, "Joystick Setup"),
-                    Description = "Joystick configuration is planned for the input layer stage.",
-                    IsEnabled = false,
+                    Description = "Inspect XInput/DirectInput status and rebind the six core buttons.",
                 },
                 new MenuItemDefinition
                 {

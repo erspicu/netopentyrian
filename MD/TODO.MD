@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 64%
+總完成度(估算): 約 68%
 
 ## 目標
 
@@ -473,7 +473,7 @@
 - `TyrianHelpTextLoader` / `GameplayTextLoader` 已開始額外讀取 `tyrian.hdt` 後半段的 `shipInfo` 區段，避免 ship specs 完全硬編碼
 - `ItemCatalogLoader` / `ItemCatalogEntry` 已擴充基礎 stat metadata，ship 會帶 speed/armor/big ship graphic，shield / generator / weapon 也開始保留可供 UI 顯示的數值欄位
 - `FullGameMenuScene` 的 `Options` 已從停用改成可進入，現在會切到 `OptionsScene`
-- 已新增 `OptionsScene`，目前會用 `tyrian.hdt` 的 `menuInt[3]` 文字生成最小 options menu，並明確標示 load/save、joystick、keyboard config 尚未實作
+- 已新增 `OptionsScene`，目前會用 `tyrian.hdt` 的 `menuInt[3]` 文字生成最小 options menu，並作為 load/save、joystick、keyboard config 的入口容器
 - 已新增 `QuitConfirmationScene`，`Quit` 現在會先做確認，再返回 episode select，開始貼近上游 `JE_quitRequest()` 的互動語意
 - `TyrianHelpTextLoader` / `GameplayTextLoader` 已額外讀取 `tyrian.hdt` 的 options menu 文字，供 `OptionsScene` 使用
 - 已新增 `IAudioDevice` 平台介面，`GameHost` 建構流程與 shutdown path 都已開始透過平台抽象處理音效裝置
@@ -487,3 +487,7 @@
 - `OptionsScene` 的 `Load Game / Save Game` 已從停用改成可進入 `SaveSlotsScene`，目前先提供 read-only slot browser，不直接寫入或載入遊戲狀態
 - 已新增 `IInputConfigurator` 與 `KeyboardSetupScene`，`Options -> Keyboard Setup` 已從停用改成可進入，會顯示六個核心按鍵綁定
 - `WinFormsInputSource` 已改成真正持有 binding profile，支援 pending rebind / reset defaults；目前至少可對 `Up/Down/Left/Right/Confirm/Cancel` 做最小 rebind
+- 已新增 `IJoystickConfigurator` 與 `JoystickSetupScene`，`Options -> Joystick Setup` 已從停用改成可進入，會顯示 backend/device 狀態、啟用開關與六個核心手把綁定
+- WinForms 端已新增 `HybridJoystickDevice`，目前會同時輪詢 `XInput + DirectInput`，並在 `WinFormsInputSource` 內整合成單一 `InputSnapshot`
+- 手把預設綁定目前採 `Any device + direction/button1/button2`，rebind 時會記錄實際觸發的 device id，後續可直接對齊 `tool/aprnes.ini` 那種 `joypad_X=1000,Button 1,1` 格式
+- 手把 ini 持久化已列為後置項目；會等主流程移植更完整後，再把目前的 in-memory 綁定改成讀寫設定檔
