@@ -18,7 +18,7 @@ public sealed class TitleSetupScene : IScene, IScenePresentation
 
     public SceneMusicKind? MusicOverride
     {
-        get { return SceneMusicKind.Menu; }
+        get { return SceneMusicKind.Title; }
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)

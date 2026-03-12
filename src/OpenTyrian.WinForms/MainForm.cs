@@ -4,10 +4,14 @@ namespace OpenTyrian.WinForms;
 
 public sealed class MainForm : Form
 {
+    private const int WmGetDlgCode = 0x0087;
     private const int WmKeyDown = 0x0100;
     private const int WmKeyUp = 0x0101;
     private const int WmSysKeyDown = 0x0104;
     private const int WmSysKeyUp = 0x0105;
+    private const int DlgcWantArrows = 0x0001;
+    private const int DlgcWantAllKeys = 0x0004;
+    private const int DlgcWantChars = 0x0080;
 
     private readonly GameHost _gameHost;
     private readonly WinFormsInputSource _inputSource;
@@ -118,6 +122,12 @@ public sealed class MainForm : Form
 
     protected override void WndProc(ref Message m)
     {
+        if (m.Msg == WmGetDlgCode)
+        {
+            m.Result = (IntPtr)(DlgcWantArrows | DlgcWantAllKeys | DlgcWantChars);
+            return;
+        }
+
         if (m.Msg == WmKeyDown || m.Msg == WmSysKeyDown)
         {
             Keys key = (Keys)(int)m.WParam & Keys.KeyCode;
