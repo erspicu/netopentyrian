@@ -13,6 +13,7 @@ public sealed partial class GameplayScene : IScene
     private static readonly string[] PauseMenuItems = { "Resume", "Retry Level", "Return to Menu" };
 
     private readonly EpisodeSessionState _sessionState;
+    private readonly bool _returnToTitleOnExit;
     private readonly Random _random;
     private readonly List<ProjectileState> _playerProjectiles;
     private readonly List<ProjectileState> _enemyProjectiles;
@@ -37,9 +38,10 @@ public sealed partial class GameplayScene : IScene
     private bool _advancedToNextLevel;
     private bool _combatInitialized;
 
-    public GameplayScene(EpisodeSessionState sessionState)
+    public GameplayScene(EpisodeSessionState sessionState, bool returnToTitleOnExit)
     {
         _sessionState = sessionState;
+        _returnToTitleOnExit = returnToTitleOnExit;
         _missionLevelNumber = Math.Max(1, sessionState.CurrentLevelNumber);
         _random = new Random((_missionLevelNumber * 997) + sessionState.Cash);
         _playerProjectiles = new List<ProjectileState>();
@@ -53,6 +55,11 @@ public sealed partial class GameplayScene : IScene
         _supportFireCooldown = 0.2f;
         _pauseSelection = 0;
         _phase = MissionPhase.Active;
+    }
+
+    public GameplayScene(EpisodeSessionState sessionState)
+        : this(sessionState, false)
+    {
     }
 
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)

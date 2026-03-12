@@ -5,6 +5,7 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
     private const int MenuCenterX = 160;
     private const int MenuStartY = 104;
     private const int MenuRowHeight = 13;
+    private const double DemoIdleSeconds = 30.0;
 
     private static readonly string[] DefaultItems =
     {
@@ -19,6 +20,7 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
 
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _selectedIndex;
+    private double _idleSeconds;
 
     public int? BackgroundPictureNumber
     {
@@ -37,6 +39,7 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
         bool upPressed = input.Up && !_previousInput.Up;
         bool downPressed = input.Down && !_previousInput.Down;
         bool pointerConfirmPressed = input.PointerConfirm && !_previousInput.PointerConfirm;
+        bool inputChanged = HasMeaningfulInputChange(input);
 
         int? hoveredIndex = input.PointerPresent ? HitTestMenuItem(resources.FontRenderer, input.PointerX, input.PointerY) : null;
         if (hoveredIndex.HasValue)
@@ -47,6 +50,14 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
             }
 
             _selectedIndex = hoveredIndex.Value;
+            inputChanged = true;
+        }
+
+        _idleSeconds = inputChanged ? 0.0 : (_idleSeconds + deltaSeconds);
+        if (_idleSeconds >= DemoIdleSeconds)
+        {
+            _previousInput = input;
+            return CreateDemoScene(resources);
         }
 
         if (cancelPressed)
@@ -139,10 +150,7 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
                 return new TitleSetupScene();
 
             case 5:
-                {
-                    EpisodeSessionState? demoSession = TitleFlowHelper.CreateFirstAvailableSession(resources.Episodes, GameStartMode.ArcadeOnePlayer, 2);
-                    return demoSession is null ? null : new GameplayScene(demoSession);
-                }
+                return CreateDemoScene(resources);
 
             case 6:
                 resources.ExitGame?.Invoke();
@@ -183,5 +191,30 @@ public sealed class TitleMenuScene : IScene, IScenePresentation
         fontRenderer.DrawText(surface, x + 1, y - 1, text, FontKind.Small, FontAlignment.Center, 15, -10, shadow: false);
         fontRenderer.DrawText(surface, x - 1, y + 1, text, FontKind.Small, FontAlignment.Center, 15, -10, shadow: false);
         fontRenderer.DrawText(surface, x, y, text, FontKind.Small, FontAlignment.Center, 15, value, shadow: false);
+    }
+
+    private static IScene? CreateDemoScene(SceneResources resources)
+    {
+        EpisodeSessionState? demoSession = TitleFlowHelper.CreateFirstAvailableSession(resources.Episodes, GameStartMode.ArcadeOnePlayer, 2);
+        return demoSession is null ? null : new GameplayScene(demoSession, true);
+    }
+
+    private bool HasMeaningfulInputChange(OpenTyrian.Platform.InputSnapshot input)
+    {
+        if (input.Up != _previousInput.Up ||
+            input.Down != _previousInput.Down ||
+            input.Left != _previousInput.Left ||
+            input.Right != _previousInput.Right ||
+            input.Confirm != _previousInput.Confirm ||
+            input.Cancel != _previousInput.Cancel ||
+            input.PointerConfirm != _previousInput.PointerConfirm ||
+            input.PointerCancel != _previousInput.PointerCancel)
+        {
+            return true;
+        }
+
+        return input.PointerPresent != _previousInput.PointerPresent ||
+            input.PointerX != _previousInput.PointerX ||
+            input.PointerY != _previousInput.PointerY;
     }
 }

@@ -2,14 +2,14 @@
 
 最後更新: 2026-03-13  
 目前狀態: 以這份文件作為後續真實進度基線  
-總完成度(估算): 約 87%
+總完成度(估算): 約 88%
 
 ## 百分比摘要
 
-- 整體完成度(估算): `87%`
+- 整體完成度(估算): `88%`
 - 啟動與 title 主樹: `72%`
 - New Game 子樹: `54%`
-- Title 其他分支: `60%`
+- Title 其他分支: `63%`
 - Title Setup 與 Jukebox: `82%`
 - 音樂與音效時機: `84%`
 - Full Game / In-game 主流程: `45%`
@@ -87,7 +87,7 @@
 
 ### 第 3 組: Title 其他分支
 
-狀態: 進行中，已達約 60%
+狀態: 進行中，已達約 63%
 
 1. `Load Game`
    - 從 title menu 直接可進
@@ -99,8 +99,8 @@
    - 先做最小多頁版
    - 後續再逼近原版 `JE_helpSystem()`
 4. `Demo`
-   - 先做可進入 attract/demo route
-   - 後續再補真正 demo record/replay 邏輯
+   - 已補 title menu `Demo` route 與 30 秒 idle demo 觸發
+   - demo 目前仍是最小 playable slice，不是原版 demo record/replay
 
 驗收標準:
 - title menu 七個選項都能進入對應功能

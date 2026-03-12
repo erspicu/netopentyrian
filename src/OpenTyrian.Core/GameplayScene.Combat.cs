@@ -53,10 +53,12 @@ public sealed partial class GameplayScene
                 return null;
 
             case 1:
-                return new GameplayScene(_sessionState);
+                return new GameplayScene(_sessionState, _returnToTitleOnExit);
 
             default:
-                return new FullGameMenuScene(_sessionState);
+                return _returnToTitleOnExit
+                    ? new TitleMenuScene()
+                    : new FullGameMenuScene(_sessionState);
         }
     }
 
@@ -76,7 +78,9 @@ public sealed partial class GameplayScene
             SceneAudio.PlayCancel(resources);
         }
 
-        return new FullGameMenuScene(_sessionState);
+        return _returnToTitleOnExit
+            ? new TitleMenuScene()
+            : new FullGameMenuScene(_sessionState);
     }
 
     private void EnsureCombatState(ItemCatalog? itemCatalog)
