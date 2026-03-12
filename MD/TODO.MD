@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
-總完成度(估算): 約 50%
+總完成度(估算): 約 52%
 
 ## 目標
 
@@ -459,3 +459,7 @@
 - 商店清單現在會把買不起的項目以較暗樣式顯示，front/rear weapon 升 power 也會檢查 affordability
 - `CubeTextLoader` 現在不只做 metadata 掃描，已會把 `cubetxtX.dat` 解析成結構化 data cube entry 清單
 - 已新增 `DataCubeScene`，`EpisodeSessionScene` 現在可用 `Up` 進入 data cube viewer，並支援左右切 entry、上下捲動內容
+- `EpisodeSessionScene` 現在會在進場時自動執行當前 `levelsX.dat` section command，遇到 `]J` 鏈式跳轉會繼續往下跑，遇到 `]I` 則直接切入 `UpgradeMenuScene`
+- `EpisodeSessionState` 已加入每個 main level 的 auto-execute 記錄，從 shop / data cube 返回同一 section 時不會重複觸發自動腳本
+- `UpgradeMenuScene` 已補上滑鼠 hover/click 與右鍵返回，現在可直接點分類、點 item、點 `Done` 提交，讓輸入層與主流程 prototype 更接近實際選單操作
+- `]S` network text sync 目前仍會被 parser 識別，但 interpreter 會明確忽略，維持 network 功能停用的移植方針

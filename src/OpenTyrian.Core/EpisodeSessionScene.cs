@@ -2,6 +2,8 @@ namespace OpenTyrian.Core;
 
 public sealed class EpisodeSessionScene : IScene
 {
+    private const int MaxAutoExecutionPasses = 32;
+
     private readonly EpisodeSessionState _sessionState;
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private EpisodeCommandExecutionResult _lastExecutionResult;
@@ -18,6 +20,12 @@ public sealed class EpisodeSessionScene : IScene
         bool upPressed = input.Up && !_previousInput.Up;
         bool downPressed = input.Down && !_previousInput.Down;
 
+        IScene? autoScene = TryAutoExecuteCurrentSection(input);
+        if (autoScene is not null)
+        {
+            return autoScene;
+        }
+
         if (upPressed && _sessionState.CubeEntries.Count > 0)
         {
             _previousInput = input;
@@ -33,6 +41,17 @@ public sealed class EpisodeSessionScene : IScene
         if (confirmPressed)
         {
             _lastExecutionResult = EpisodeCommandInterpreter.ExecuteCurrentSection(_sessionState);
+            if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
+            {
+                _previousInput = input;
+                return new UpgradeMenuScene(_sessionState);
+            }
+
+            IScene? chainedAutoScene = TryAutoExecuteCurrentSection(input);
+            if (chainedAutoScene is not null)
+            {
+                return chainedAutoScene;
+            }
         }
 
         _previousInput = input;
@@ -79,9 +98,33 @@ public sealed class EpisodeSessionScene : IScene
             : "no shop categories";
         resources.FontRenderer.DrawText(surface, 160, 252, $"shop map: {firstShopCategory}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 260, $"loadout {_sessionState.PlayerLoadout.BuildSummary()}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 268, $"fadeBlack:{_sessionState.FadeBlackRequested} netSync:{_sessionState.NetworkTextSyncRequested}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 276, $"last exec: cmds={_lastExecutionResult.ExecutedCommands} changed={_lastExecutionResult.StateChanged} jumped={_lastExecutionResult.Jumped}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 284, "Enter runs section commands  Up data cubes  Down upgrade shop", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 268, $"fadeBlack:{_sessionState.FadeBlackRequested} autoMain:{_sessionState.AutoExecutedMainLevelNumber}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 276, $"last exec: cmds={_lastExecutionResult.ExecutedCommands} changed={_lastExecutionResult.StateChanged} jumped={_lastExecutionResult.Jumped} shop={_lastExecutionResult.ShopRequested}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 284, "Section commands auto-run on entry  Enter reruns  Up cubes  Down shop", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawDark(surface, 160, 292, $"bonus:{_sessionState.BonusLevel} repeat:{_sessionState.GameHasRepeated} jumpBack:{_sessionState.JumpBackToEpisode1}", FontKind.Tiny, FontAlignment.Center, black: false);
+    }
+
+    private IScene? TryAutoExecuteCurrentSection(OpenTyrian.Platform.InputSnapshot input)
+    {
+        int autoExecutionPasses = 0;
+        while (_sessionState.ShouldAutoExecuteCurrentMainLevel() && autoExecutionPasses < MaxAutoExecutionPasses)
+        {
+            autoExecutionPasses++;
+            _sessionState.MarkCurrentMainLevelAutoExecuted();
+            _lastExecutionResult = EpisodeCommandInterpreter.ExecuteCurrentSection(_sessionState);
+
+            if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
+            {
+                _previousInput = input;
+                return new UpgradeMenuScene(_sessionState);
+            }
+
+            if (!_lastExecutionResult.Jumped)
+            {
+                break;
+            }
+        }
+
+        return null;
     }
 }

@@ -48,6 +48,9 @@
 - `1P Full Game`、`1P Arcade`、`2P Arcade` 已會帶著對應模式進入 episode select / session
 - shop 現在已追蹤 `cash / trade-in / affordability`，提交裝備會真正扣款或退款
 - `cubetxtX.dat` 已結構化為 data cube entry，episode session 可進入 data cube viewer
+- episode session 現在會在進場時自動執行當前 section command，遇到 `]I` 會直接轉進 upgrade/shop scene
+- upgrade/shop scene 已支援滑鼠 hover/click 與右鍵返回，和目前 WinForms 輸入層對齊
+- `]S` network text sync 仍會被解析，但執行時明確忽略，network 流程維持停用
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 

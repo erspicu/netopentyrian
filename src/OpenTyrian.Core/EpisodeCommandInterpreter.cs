@@ -8,12 +8,13 @@ public static class EpisodeCommandInterpreter
 
         if (sessionState.CurrentMainLevelEntry is null)
         {
-            return new EpisodeCommandExecutionResult(false, false, 0);
+            return new EpisodeCommandExecutionResult(false, false, 0, false);
         }
 
         bool stateChanged = false;
         bool jumped = false;
         int executedCommands = 0;
+        bool shopRequested = false;
 
         foreach (EpisodeCommandInfo command in sessionState.CurrentMainLevelEntry.Commands)
         {
@@ -42,6 +43,7 @@ public static class EpisodeCommandInterpreter
                 case EpisodeCommandKind.ItemAvailabilityBlock:
                     sessionState.SetItemAvailability(command.ItemAvailability);
                     stateChanged = true;
+                    shopRequested = sessionState.ShopCategories.Count > 0;
                     break;
 
                 case EpisodeCommandKind.FadeBlack:
@@ -50,8 +52,7 @@ public static class EpisodeCommandInterpreter
                     break;
 
                 case EpisodeCommandKind.NetworkTextSync:
-                    sessionState.RequestNetworkTextSync();
-                    stateChanged = true;
+                    // Network support is intentionally disabled in this port.
                     break;
 
                 case EpisodeCommandKind.SectionJump when command.TargetMainLevel is int jumpTarget:
@@ -59,7 +60,7 @@ public static class EpisodeCommandInterpreter
                     {
                         stateChanged = true;
                         jumped = true;
-                        return new EpisodeCommandExecutionResult(stateChanged, jumped, executedCommands);
+                        return new EpisodeCommandExecutionResult(stateChanged, jumped, executedCommands, shopRequested);
                     }
                     break;
 
@@ -68,13 +69,13 @@ public static class EpisodeCommandInterpreter
                     {
                         stateChanged = true;
                         jumped = true;
-                        return new EpisodeCommandExecutionResult(stateChanged, jumped, executedCommands);
+                        return new EpisodeCommandExecutionResult(stateChanged, jumped, executedCommands, shopRequested);
                     }
                     break;
             }
         }
 
-        return new EpisodeCommandExecutionResult(stateChanged, jumped, executedCommands);
+        return new EpisodeCommandExecutionResult(stateChanged, jumped, executedCommands, shopRequested);
     }
 
     private static bool TryParseCommandInt(string rawText, out int value)

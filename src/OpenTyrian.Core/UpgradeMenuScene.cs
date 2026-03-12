@@ -3,6 +3,14 @@ namespace OpenTyrian.Core;
 public sealed class UpgradeMenuScene : IScene
 {
     private const int VisibleSubmenuRows = 6;
+    private const int CategoryListLeft = 84;
+    private const int CategoryListRight = 196;
+    private const int CategoryListTop = 96;
+    private const int CategoryRowHeight = 12;
+    private const int SubmenuLeft = 196;
+    private const int SubmenuRight = 316;
+    private const int SubmenuTop = 94;
+    private const int SubmenuRowHeight = 12;
 
     private enum UpgradeMenuMode
     {
@@ -41,9 +49,29 @@ public sealed class UpgradeMenuScene : IScene
         bool downPressed = input.Down && !_previousInput.Down;
         bool leftPressed = input.Left && !_previousInput.Left;
         bool rightPressed = input.Right && !_previousInput.Right;
+        bool pointerConfirmPressed = input.PointerConfirm && !_previousInput.PointerConfirm;
+        bool pointerCancelPressed = input.PointerCancel && !_previousInput.PointerCancel;
         ShopCategory? category = GetSelectedCategory();
 
-        if (cancelPressed)
+        if (_mode == UpgradeMenuMode.CategorySelect && input.PointerPresent)
+        {
+            int? hoveredCategoryRow = HitTestCategoryRow(input.PointerX, input.PointerY, GetCategoryRowCount());
+            if (hoveredCategoryRow is int pointerCategoryIndex)
+            {
+                _selectedCategoryIndex = pointerCategoryIndex;
+                category = GetSelectedCategory();
+            }
+        }
+        else if (_mode == UpgradeMenuMode.ItemSelect && category is not null && input.PointerPresent)
+        {
+            int? hoveredSubmenuRow = HitTestSubmenuRow(category, _selectedSlots[_selectedCategoryIndex], input.PointerX, input.PointerY);
+            if (hoveredSubmenuRow is int pointerSlot)
+            {
+                _selectedSlots[_selectedCategoryIndex] = pointerSlot;
+            }
+        }
+
+        if (cancelPressed || pointerCancelPressed)
         {
             if (_mode == UpgradeMenuMode.ItemSelect)
             {
@@ -158,6 +186,67 @@ public sealed class UpgradeMenuScene : IScene
                             "Prepared {0}  need {1} more",
                             BuildPreparedSelectionLabel(category.Kind, itemId, preparedPower, resources.ItemCatalog),
                             -cashAfter);
+                }
+            }
+        }
+        else if (pointerConfirmPressed)
+        {
+            if (_mode == UpgradeMenuMode.CategorySelect)
+            {
+                int? hoveredCategoryRow = HitTestCategoryRow(input.PointerX, input.PointerY, GetCategoryRowCount());
+                if (hoveredCategoryRow is int pointerCategoryIndex)
+                {
+                    _selectedCategoryIndex = pointerCategoryIndex;
+                    category = GetSelectedCategory();
+                    if (category is null)
+                    {
+                        _previousInput = input;
+                        return new EpisodeSessionScene(_sessionState);
+                    }
+
+                    SyncSelectedSlotToPrepared(category);
+                    _mode = UpgradeMenuMode.ItemSelect;
+                    _statusText = $"{category.DisplayName} submenu opened";
+                }
+            }
+            else if (category is not null)
+            {
+                int? hoveredSubmenuRow = HitTestSubmenuRow(category, _selectedSlots[_selectedCategoryIndex], input.PointerX, input.PointerY);
+                if (hoveredSubmenuRow is int pointerSlot)
+                {
+                    _selectedSlots[_selectedCategoryIndex] = pointerSlot;
+                    if (IsDoneRow(category, pointerSlot))
+                    {
+                        if (CommitPreparedSelection(category, resources.ItemCatalog))
+                        {
+                            _mode = UpgradeMenuMode.CategorySelect;
+                        }
+                    }
+                    else
+                    {
+                        int itemId = category.ItemIds[pointerSlot];
+                        _preparedItemIds[_selectedCategoryIndex] = itemId;
+                        if (ItemPriceCalculator.IsWeaponCategory(category.Kind))
+                        {
+                            _preparedWeaponPowers[_selectedCategoryIndex] = GetSelectedWeaponPower(category, pointerSlot);
+                        }
+                        else
+                        {
+                            _preparedWeaponPowers[_selectedCategoryIndex] = 0;
+                        }
+
+                        int preparedPower = _preparedWeaponPowers[_selectedCategoryIndex];
+                        int cashAfter = _sessionState.GetCashAfterTransaction(category.Kind, itemId, preparedPower, resources.ItemCatalog);
+                        _statusText = cashAfter >= 0
+                            ? string.Format(
+                                "Prepared {0}  cash after {1}",
+                                BuildPreparedSelectionLabel(category.Kind, itemId, preparedPower, resources.ItemCatalog),
+                                cashAfter)
+                            : string.Format(
+                                "Prepared {0}  need {1} more",
+                                BuildPreparedSelectionLabel(category.Kind, itemId, preparedPower, resources.ItemCatalog),
+                                -cashAfter);
+                    }
                 }
             }
         }
@@ -568,8 +657,52 @@ public sealed class UpgradeMenuScene : IScene
     private string BuildFooterText()
     {
         return _mode == UpgradeMenuMode.CategorySelect
-            ? "Up/Down category  Enter open/done  Esc back"
-            : "Up/Down item  Left/Right power  Enter prepare/done  Esc revert";
+            ? "Up/Down or mouse category  Enter/click open  Esc/right-click back"
+            : "Up/Down or mouse item  Left/Right power  Enter/click prepare  Esc/right-click revert";
+    }
+
+    private static int? HitTestCategoryRow(int x, int y, int rowCount)
+    {
+        if (x < CategoryListLeft || x > CategoryListRight || rowCount <= 0)
+        {
+            return null;
+        }
+
+        for (int i = 0; i < rowCount; i++)
+        {
+            int top = CategoryListTop + (i * CategoryRowHeight);
+            int bottom = top + CategoryRowHeight - 2;
+            if (y >= top && y <= bottom)
+            {
+                return i;
+            }
+        }
+
+        return null;
+    }
+
+    private static int? HitTestSubmenuRow(ShopCategory category, int selectedSlot, int x, int y)
+    {
+        if (x < SubmenuLeft || x > SubmenuRight)
+        {
+            return null;
+        }
+
+        int totalRows = Math.Max(1, category.ItemCount + 1);
+        int visibleCount = Math.Min(VisibleSubmenuRows, totalRows);
+        int windowStart = GetWindowStart(selectedSlot, totalRows, visibleCount);
+
+        for (int i = 0; i < visibleCount; i++)
+        {
+            int top = SubmenuTop + (i * SubmenuRowHeight);
+            int bottom = top + SubmenuRowHeight - 2;
+            if (y >= top && y <= bottom)
+            {
+                return windowStart + i;
+            }
+        }
+
+        return null;
     }
 
     private static string BuildItemLabel(ItemCatalog? itemCatalog, ShopCategory category, int itemId, int weaponPower, bool isPrepared, bool isEquipped, bool affordable)

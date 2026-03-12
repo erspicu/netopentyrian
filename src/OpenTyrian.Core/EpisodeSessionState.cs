@@ -46,7 +46,7 @@ public sealed class EpisodeSessionState
         ShopCategories = new ShopCategory[0];
         PlayerLoadout = new PlayerLoadoutState();
         FadeBlackRequested = false;
-        NetworkTextSyncRequested = false;
+        AutoExecutedMainLevelNumber = 0;
     }
 
     public EpisodeStartInfo StartInfo { get; }
@@ -129,7 +129,7 @@ public sealed class EpisodeSessionState
 
     public bool FadeBlackRequested { get; private set; }
 
-    public bool NetworkTextSyncRequested { get; private set; }
+    public int AutoExecutedMainLevelNumber { get; private set; }
 
     private static IList<MainLevelEntry> BuildMainLevelEntries(IList<EpisodeSectionInfo> sections)
     {
@@ -253,6 +253,22 @@ public sealed class EpisodeSessionState
         PlayerLoadout.SetWeaponPower(kind, power);
     }
 
+    public bool ShouldAutoExecuteCurrentMainLevel()
+    {
+        return CurrentMainLevelEntry is not null && CurrentLevelNumber != AutoExecutedMainLevelNumber;
+    }
+
+    public void MarkCurrentMainLevelAutoExecuted()
+    {
+        if (CurrentMainLevelEntry is null)
+        {
+            AutoExecutedMainLevelNumber = 0;
+            return;
+        }
+
+        AutoExecutedMainLevelNumber = CurrentLevelNumber;
+    }
+
     private void SeedLoadoutFromAvailability()
     {
         foreach (ShopCategory category in ShopCategories)
@@ -273,15 +289,9 @@ public sealed class EpisodeSessionState
         FadeBlackRequested = true;
     }
 
-    public void RequestNetworkTextSync()
-    {
-        NetworkTextSyncRequested = true;
-    }
-
     public void ClearTransientCommandFlags()
     {
         FadeBlackRequested = false;
-        NetworkTextSyncRequested = false;
     }
 
     private static int GetInitialCash(int episodeNumber, GameStartMode startMode)
