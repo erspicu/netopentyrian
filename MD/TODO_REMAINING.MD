@@ -2,21 +2,21 @@
 
 最後更新: 2026-03-13  
 目前狀態: 以這份文件作為後續真實進度基線  
-總完成度(估算): 約 88%
+總完成度(估算): 約 90%
 
 ## 百分比摘要
 
-- 整體完成度(估算): `88%`
+- 整體完成度(估算): `90%`
 - 啟動與 title 主樹: `72%`
 - New Game 子樹: `54%`
-- Title 其他分支: `63%`
+- Title 其他分支: `76%`
 - Title Setup 與 Jukebox: `82%`
 - 音樂與音效時機: `84%`
 - Full Game / In-game 主流程: `45%`
 - Full Game hub / item screen parity: `40%`
 - 視覺與版面: `55%`
 - 資料與存檔對齊: `60%`
-- Input / Demo / Regression: `50%`
+- Input / Demo / Regression: `54%`
 
 ## 更新規則
 
@@ -38,12 +38,10 @@
 2. 啟動音樂時機不對
    - 原版 `Epic / Eclipse` 前導不先播 title song
    - 現況是程式一啟動就進 title 類型 BGM
-3. title menu 樹不完整
-   - 缺 `High Scores`
-   - 缺真正 `Instructions`
-   - 缺 title-level `Setup`
-   - 缺 `Demo`
-   - `Load Game` 掛在錯的位置
+3. title menu 樹仍有未完全對齊部分
+   - `Instructions` 已補成 topic/page 流程，但版面仍是近似實作
+   - `Demo` 仍是最小 playable slice，不是原版 record/replay
+   - `Load Game / Setup / High Scores` 雖已可從 title 正確進入，細節仍需持續校正
 4. `New Game` 樹不完整
    - 缺 `difficultySelect()`
    - `gameplaySelect()` 目前掛在錯的位置
@@ -87,7 +85,7 @@
 
 ### 第 3 組: Title 其他分支
 
-狀態: 進行中，已達約 63%
+狀態: 進行中，已達約 76%
 
 1. `Load Game`
    - 從 title menu 直接可進
@@ -96,8 +94,9 @@
    - 已改成 episode 分頁 + `One Player / Two Player` 雙區塊版面
    - 已直接讀 `tyrian.sav` 內前 18 筆 high score record，較接近原版資料來源
 3. `Instructions`
-   - 先做最小多頁版
-   - 後續再逼近原版 `JE_helpSystem()`
+   - 已補成 topic menu + 8 page help flow
+   - 已讀取 `tyrian.hdt` 內 `helpTxt / miscText / topicName`
+   - 仍需持續微調 page box 版面與字距
 4. `Demo`
    - 已補 title menu `Demo` route 與 30 秒 idle demo 觸發
    - demo 目前仍是最小 playable slice，不是原版 demo record/replay
@@ -197,7 +196,8 @@
 2. 手把行為先維持目前 runtime 綁定
 3. ini 持久化依既定決策繼續延後
 4. 每完成一組，重新與原版做截圖比對
-5. `compare_jukebox.ps1` 已改成逐段導航與分步截圖，但 C# 版自動導覽仍需持續校正 delay / key route
+5. `compare_versions.ps1` 已再次刷新原版 / C# 入口畫面截圖到 `temp/compare-versions`
+6. `compare_jukebox.ps1` 已改成逐段導航與分步截圖，但 C# 版自動導覽仍需持續校正 delay / key route
 
 驗收標準:
 - `temp/compare-versions` 可持續看出差距縮小

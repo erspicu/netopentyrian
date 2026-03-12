@@ -46,6 +46,8 @@
 - upgrade/shop prototype 與最小 `PlayerLoadoutState`
 - WinForms 滑鼠座標/按鍵已接入，main menu 與 episode select 可用滑鼠 hover/click
 - `1P Full Game`、`1P Arcade`、`2P Arcade` 已會帶著對應模式進入 episode select / session
+- title menu 的 `Load Game / High Scores / Instructions / Setup / Demo / Quit` 都已接上實際分支，不再只是佔位項
+- `Instructions` 已改成較接近原版 `JE_helpSystem()` 的 topic menu + 8 page help flow，並開始直接讀取 `tyrian.hdt` 內的 `helpTxt / miscText / topicName`
 - shop 現在已追蹤 `cash / trade-in / affordability`，提交裝備會真正扣款或退款
 - `cubetxtX.dat` 已結構化為 data cube entry，episode session 可進入 data cube viewer
 - episode session 現在會在進場時自動執行當前 section command，遇到 `]I` 會直接轉進 upgrade/shop scene

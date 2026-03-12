@@ -3,6 +3,9 @@ namespace OpenTyrian.Core;
 public sealed class TyrianHelpTextCatalog
 {
     public TyrianHelpTextCatalog(
+        IList<string> helpText,
+        IList<string> miscText,
+        IList<string> topicNames,
         IList<string> mainMenuHelp,
         IList<string> gameplayNames,
         IList<string> episodeNames,
@@ -10,6 +13,9 @@ public sealed class TyrianHelpTextCatalog
         IList<ShipDescriptionEntry> shipInfo,
         IList<string> optionsMenu)
     {
+        HelpText = helpText;
+        MiscText = miscText;
+        TopicNames = topicNames;
         MainMenuHelp = mainMenuHelp;
         GameplayNames = gameplayNames;
         EpisodeNames = episodeNames;
@@ -17,6 +23,12 @@ public sealed class TyrianHelpTextCatalog
         ShipInfo = shipInfo;
         OptionsMenu = optionsMenu;
     }
+
+    public IList<string> HelpText { get; }
+
+    public IList<string> MiscText { get; }
+
+    public IList<string> TopicNames { get; }
 
     public IList<string> MainMenuHelp { get; }
 

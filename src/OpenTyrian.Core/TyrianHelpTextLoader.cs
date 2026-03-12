@@ -28,10 +28,14 @@ public static class TyrianHelpTextLoader
 
         data.ReadInt32(); // episode1DataLoc
 
-        for (int i = 0; i < 8; i++)
-        {
-            SkipSection(data, SectionCounts[i]);
-        }
+        List<string> helpText = ReadSection(data, SectionCounts[0]);
+        SkipSection(data, SectionCounts[1]);
+        List<string> miscText = ReadSection(data, SectionCounts[2]);
+        SkipSection(data, SectionCounts[3]);
+        SkipSection(data, SectionCounts[4]);
+        SkipSection(data, SectionCounts[5]);
+        SkipSection(data, SectionCounts[6]);
+        List<string> topicNames = ReadSection(data, SectionCounts[7]);
 
         List<string> mainMenuHelp = ReadSection(data, SectionCounts[8]);
         List<string> fullGameMenu = ReadSection(data, SectionCounts[9]);
@@ -61,7 +65,7 @@ public static class TyrianHelpTextLoader
         SkipSection(data, 5);  // destructModeName
         List<ShipDescriptionEntry> shipInfo = ReadShipInfoSection(data, 13);
 
-        return new TyrianHelpTextCatalog(mainMenuHelp, gameplayNames, episodeNames, fullGameMenu, shipInfo, optionsMenu);
+        return new TyrianHelpTextCatalog(helpText, miscText, topicNames, mainMenuHelp, gameplayNames, episodeNames, fullGameMenu, shipInfo, optionsMenu);
     }
 
     private static void SkipSection(TyrianDataStream data, int count)
