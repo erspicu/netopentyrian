@@ -79,6 +79,27 @@ public sealed class PlayerLoadoutState
         return _equippedItems;
     }
 
+    public int GetEquippedValue(ItemCategoryKind kind, ItemCatalog? itemCatalog)
+    {
+        return ItemPriceCalculator.GetItemValue(
+            kind,
+            GetEquippedItemId(kind),
+            GetWeaponPower(kind),
+            itemCatalog);
+    }
+
+    public int GetTotalValue(ItemCatalog? itemCatalog)
+    {
+        int totalValue = 0;
+
+        foreach (ItemCategoryKind kind in SummaryOrder)
+        {
+            totalValue += GetEquippedValue(kind, itemCatalog);
+        }
+
+        return totalValue;
+    }
+
     public string BuildSummary()
     {
         return string.Join(

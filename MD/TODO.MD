@@ -2,6 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、7 階段進行中
+總完成度(估算): 約 48%
 
 ## 目標
 
@@ -453,3 +454,6 @@
 - `MainMenuScene` 與 `EpisodeSelectScene` 現在可用滑鼠 hover/click 操作，輸入層開始進入第 5 階段
 - `1P Arcade` / `2P Arcade` 不再是無反應選項，現在會帶著對應 `GameStartMode` 實際進入 episode select 與 episode session
 - `EpisodeSessionState` 已開始保存 start mode / player count，`EpisodeSessionScene` 顯示的 session 摘要會反映目前模式
+- `EpisodeSessionState` 現在已加入 episode/mode 對應的初始 cash，並會追蹤即時 cash、裝備總價值與 total score
+- `UpgradeMenuScene` 現在會依 trade-in value 計算 category budget，提交裝備時真的扣款/退款，買不起時會阻止 commit
+- 商店清單現在會把買不起的項目以較暗樣式顯示，front/rear weapon 升 power 也會檢查 affordability

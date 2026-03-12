@@ -2,6 +2,8 @@ namespace OpenTyrian.Core;
 
 public sealed class EpisodeSessionState
 {
+    private static readonly int[] FullGameInitialCashByEpisode = { 10000, 15000, 20000, 30000 };
+
     public EpisodeSessionState(EpisodeStartInfo startInfo, GameStartMode startMode)
     {
         StartInfo = startInfo;
@@ -32,6 +34,8 @@ public sealed class EpisodeSessionState
         CubeSectionMarkerCount = startInfo.CubeInfo?.SectionMarkerCount ?? 0;
         PlayerCount = startMode.GetPlayerCount();
         IsArcadeLikeMode = startMode.IsArcadeLike();
+        InitialCash = GetInitialCash(startInfo.EpisodeNumber, startMode);
+        Cash = InitialCash;
         SaveLevel = CurrentLevelNumber;
         LastLevelSaveRequested = false;
         ItemShopSongIndex = null;
@@ -47,6 +51,8 @@ public sealed class EpisodeSessionState
     public EpisodeStartInfo StartInfo { get; }
 
     public GameStartMode StartMode { get; }
+
+    public int InitialCash { get; }
 
     public int InitialEpisodeNumber { get; }
 
@@ -99,6 +105,8 @@ public sealed class EpisodeSessionState
     public int PlayerCount { get; }
 
     public bool IsArcadeLikeMode { get; private set; }
+
+    public int Cash { get; private set; }
 
     public int SaveLevel { get; private set; }
 
@@ -187,6 +195,56 @@ public sealed class EpisodeSessionState
         PlayerLoadout.Equip(kind, itemId);
     }
 
+    public int GetTradeInValue(ItemCategoryKind kind, ItemCatalog? itemCatalog)
+    {
+        return PlayerLoadout.GetEquippedValue(kind, itemCatalog);
+    }
+
+    public int GetTransactionCostDelta(ItemCategoryKind kind, int itemId, int weaponPower, ItemCatalog? itemCatalog)
+    {
+        int currentValue = GetTradeInValue(kind, itemCatalog);
+        int nextValue = ItemPriceCalculator.GetItemValue(kind, itemId, weaponPower, itemCatalog);
+        return nextValue - currentValue;
+    }
+
+    public int GetCashAfterTransaction(ItemCategoryKind kind, int itemId, int weaponPower, ItemCatalog? itemCatalog)
+    {
+        return Cash - GetTransactionCostDelta(kind, itemId, weaponPower, itemCatalog);
+    }
+
+    public bool CanAffordTransaction(ItemCategoryKind kind, int itemId, int weaponPower, ItemCatalog? itemCatalog)
+    {
+        return GetCashAfterTransaction(kind, itemId, weaponPower, itemCatalog) >= 0;
+    }
+
+    public bool TryCommitShopSelection(ItemCategoryKind kind, int itemId, int weaponPower, ItemCatalog? itemCatalog)
+    {
+        int cashAfter = GetCashAfterTransaction(kind, itemId, weaponPower, itemCatalog);
+        if (cashAfter < 0)
+        {
+            return false;
+        }
+
+        Cash = cashAfter;
+        PlayerLoadout.Equip(kind, itemId);
+        if (ItemPriceCalculator.IsWeaponCategory(kind))
+        {
+            PlayerLoadout.SetWeaponPower(kind, weaponPower);
+        }
+
+        return true;
+    }
+
+    public int GetTotalAssetValue(ItemCatalog? itemCatalog)
+    {
+        return PlayerLoadout.GetTotalValue(itemCatalog);
+    }
+
+    public int GetTotalScore(ItemCatalog? itemCatalog)
+    {
+        return Cash + GetTotalAssetValue(itemCatalog);
+    }
+
     public void SetWeaponPower(ItemCategoryKind kind, int power)
     {
         PlayerLoadout.SetWeaponPower(kind, power);
@@ -221,5 +279,20 @@ public sealed class EpisodeSessionState
     {
         FadeBlackRequested = false;
         NetworkTextSyncRequested = false;
+    }
+
+    private static int GetInitialCash(int episodeNumber, GameStartMode startMode)
+    {
+        if (startMode != GameStartMode.FullGame)
+        {
+            return 0;
+        }
+
+        if (episodeNumber < 1 || episodeNumber > FullGameInitialCashByEpisode.Length)
+        {
+            return 0;
+        }
+
+        return FullGameInitialCashByEpisode[episodeNumber - 1];
     }
 }

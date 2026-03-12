@@ -61,7 +61,7 @@ public sealed class EpisodeSessionScene : IScene
         resources.FontRenderer.DrawText(surface, 160, 212, $"section commands: {commandSummary}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 220, $"cube exists:{_sessionState.CubeExists} len:{_sessionState.CubeLength} markers:{_sessionState.CubeSectionMarkerCount}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         resources.FontRenderer.DrawText(surface, 160, 228, $"mode: {_sessionState.StartMode.GetDisplayName()} players:{_sessionState.PlayerCount} arcadeLike:{_sessionState.IsArcadeLikeMode}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawText(surface, 160, 236, $"saveLevel:{_sessionState.SaveLevel} lastLevelSave:{_sessionState.LastLevelSaveRequested}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 236, $"cash:{_sessionState.Cash} assets:{_sessionState.GetTotalAssetValue(resources.ItemCatalog)} total:{_sessionState.GetTotalScore(resources.ItemCatalog)}", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
         int firstItemRowCount = _sessionState.ItemAvailabilityMaxPerRow.Count > 0 ? _sessionState.ItemAvailabilityMaxPerRow[0] : 0;
         int firstItemValue = _sessionState.ItemAvailabilityRows.Count > 0 && _sessionState.ItemAvailabilityRows[0].Count > 0
             ? _sessionState.ItemAvailabilityRows[0][0]
