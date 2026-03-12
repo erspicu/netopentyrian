@@ -131,7 +131,7 @@ public sealed class OptionsScene : IScene
                 {
                     Id = "save_game",
                     Label = GetLabel(labels, 2, "Save Game"),
-                    Description = "Read-only save slot browser for now.",
+                    Description = "Browse slots, edit a save name, and write the current session.",
                 },
                 new MenuItemDefinition
                 {

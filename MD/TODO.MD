@@ -1,8 +1,8 @@
 # OpenTyrian C#/.NET Framework 4.0 移植 TODO
 
 最後更新: 2026-03-12
-目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 72%
+目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7、8 階段進行中
+總完成度(估算): 約 76%
 
 ## 目標
 
@@ -494,3 +494,5 @@
 - 已新增 `SaveGameFileManager` / `SaveGameFile` / `SaveSlotRecord`，目前會保留 `tyrian.sav` 的原始加密與 checksum 格式，並支援 22 個 slot 的 decode + encode + writeback
 - `IUserFileStore` 已擴充 `OpenWrite()`，`SaveSlotsScene` 不再只是 read-only browser；`Load Game` 會依 slot 內容重建 episode session，`Save Game` 會把目前 session 寫回選定 slot
 - `EpisodeSessionState` 已新增 save slot apply/write helper，現在至少會把 episode / level / cash / ship/front/rear/shield/generator/sidekick / weapon power 這些核心狀態和 `tyrian.sav` 對齊
+- 已新增 `ITextEntrySource` 平台抽象與 WinForms `KeyPress` 佇列，scene 現在可安全消費文字輸入而不直接依賴 WinForms 事件
+- `SaveSlotsScene` 的 `Save Game` 現在會先進入名稱編輯狀態，可編輯 14 字元 ASCII slot name、用 Backspace 刪除、Enter 寫回 `tyrian.sav`

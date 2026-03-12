@@ -94,6 +94,7 @@ public sealed class GameHost : IAudioCueSink
             SaveSlots = _saveSlots,
             InputConfigurator = _inputSource as OpenTyrian.Platform.IInputConfigurator,
             JoystickConfigurator = _inputSource as OpenTyrian.Platform.IJoystickConfigurator,
+            TextEntrySource = _inputSource as OpenTyrian.Platform.ITextEntrySource,
             UserFileStore = _userFileStore,
             SaveCatalogUpdater = UpdateSaveCatalog,
             TitleImage = _titleImage,

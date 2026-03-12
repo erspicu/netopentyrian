@@ -58,6 +58,7 @@ public sealed class MainForm : Form
         Shown += OnShown;
         FormClosed += OnFormClosed;
         KeyDown += OnKeyDown;
+        KeyPress += OnKeyPress;
         KeyUp += OnKeyUp;
     }
 
@@ -100,6 +101,11 @@ public sealed class MainForm : Form
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
         _inputSource.SetKeyState(e.KeyCode, isDown: true);
+    }
+
+    private void OnKeyPress(object? sender, KeyPressEventArgs e)
+    {
+        _inputSource.QueueTextInput(e.KeyChar);
     }
 
     private void OnKeyUp(object? sender, KeyEventArgs e)

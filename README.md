@@ -66,6 +66,7 @@
 - 已建立 scene -> host 的 audio cue 路徑，title / main menu / episode select / full-game hub / shop / data cube / options 等互動現在會送出最小 PCM 提示音
 - 已新增 `IUserFileStore` 與 `tyrian.sav` 讀寫路徑，`Options` 底下的 `Load Game / Save Game` 現在會真的讀出 slot 並可寫回目前 session
 - `SaveGameFileManager` 會保留原始 `tyrian.sav` 加密/checksum 格式，`Load Game` 目前可把 slot 的 episode/level/cash/loadout 套回 session，`Save Game` 會把目前 session 寫回 slot
+- `Save Game` 不再直接覆寫預設名稱；WinForms 已補上最小文字輸入佇列，存檔畫面可編輯 14 字元 ASCII slot name，再寫回 `tyrian.sav`
 - `Options -> Keyboard Setup` 現在可進入，會顯示目前六個核心按鍵綁定並支援最小 rebind / reset defaults
 - `Options -> Joystick Setup` 現在可進入，WinForms 輸入層已改成輪詢 `XInput + DirectInput`，並可對六個核心按鍵做最小手把重綁
 - 手把綁定目前先保存在執行期間記憶體內；之後會再依 `tool/aprnes.ini` 類似的 key/value 格式補上 ini 讀寫

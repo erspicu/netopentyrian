@@ -1,19 +1,22 @@
+using System.Text;
 using OpenTyrian.Platform;
 
 namespace OpenTyrian.WinForms;
 
-public sealed class WinFormsInputSource : IInputSource, IInputConfigurator, IJoystickConfigurator
+public sealed class WinFormsInputSource : IInputSource, IInputConfigurator, IJoystickConfigurator, ITextEntrySource
 {
     private const int AnyJoystickDeviceId = -1;
     private readonly Dictionary<InputButton, Keys[]> _keyboardBindings = new();
     private readonly Dictionary<InputButton, JoystickBinding> _joystickBindings = new();
     private readonly HashSet<Keys> _pressedKeys = new();
+    private readonly StringBuilder _pendingText = new();
     private readonly HybridJoystickDevice _joystickDevice = new();
     private bool _pointerPresent;
     private int _pointerX;
     private int _pointerY;
     private bool _pointerConfirm;
     private bool _pointerCancel;
+    private int _pendingBackspaceCount;
     private bool _joystickEnabled = true;
     private InputButton? _pendingKeyboardBinding;
     private InputButton? _pendingJoystickBinding;
@@ -61,6 +64,26 @@ public sealed class WinFormsInputSource : IInputSource, IInputConfigurator, IJoy
         get { return _joystickDevice.DeviceSummary; }
     }
 
+    string ITextEntrySource.ConsumeText()
+    {
+        string text = _pendingText.ToString();
+        _pendingText.Length = 0;
+        return text;
+    }
+
+    int ITextEntrySource.ConsumeBackspaceCount()
+    {
+        int count = _pendingBackspaceCount;
+        _pendingBackspaceCount = 0;
+        return count;
+    }
+
+    void ITextEntrySource.ClearPendingText()
+    {
+        _pendingText.Length = 0;
+        _pendingBackspaceCount = 0;
+    }
+
     public void InitializeJoystick(IntPtr windowHandle)
     {
         _joystickDevice.Initialize(windowHandle);
@@ -89,6 +112,20 @@ public sealed class WinFormsInputSource : IInputSource, IInputConfigurator, IJoy
         else
         {
             _pressedKeys.Remove(key);
+        }
+    }
+
+    public void QueueTextInput(char character)
+    {
+        if (character == '\b')
+        {
+            _pendingBackspaceCount++;
+            return;
+        }
+
+        if (character >= 32 && character <= 126)
+        {
+            _pendingText.Append(character);
         }
     }
 
