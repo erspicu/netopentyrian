@@ -4,13 +4,18 @@ namespace OpenTyrian.Core;
 
 public sealed class GameHost : IAudioCueSink
 {
+    private const int AudioChunkFrames = 1024;
     private readonly IAssetLocator _assetLocator;
     private readonly IInputSource _inputSource;
     private readonly IAudioDevice _audioDevice;
     private readonly IUserFileStore _userFileStore;
     private readonly Dictionary<AudioCueKind, AudioCueSample> _audioCues = new();
+    private readonly Dictionary<SceneMusicKind, AudioCueSample> _musicTracks = new();
+    private readonly List<AudioCuePlayback> _activeCuePlaybacks = new();
     private IScene _scene;
     private double _timeSeconds;
+    private double _bufferedAudioSeconds;
+    private int _musicFrameCursor;
     private PaletteBank? _paletteBank;
     private PaletteColor[]? _activePalette;
     private PicImage? _titleImage;
@@ -22,6 +27,7 @@ public sealed class GameHost : IAudioCueSink
     private GameplayTextInfo? _gameplayText;
     private ItemCatalog? _itemCatalog;
     private SaveSlotCatalog? _saveSlots;
+    private SceneMusicKind _currentMusicKind;
 
     public GameHost(IAssetLocator assetLocator, IInputSource inputSource, IAudioDevice audioDevice, IUserFileStore userFileStore)
     {
@@ -67,6 +73,8 @@ public sealed class GameHost : IAudioCueSink
         {
             _scene = nextScene;
         }
+
+        PumpAudio(deltaSeconds);
 
         RenderIndexedFrame();
 
@@ -298,7 +306,7 @@ public sealed class GameHost : IAudioCueSink
             return;
         }
 
-        _audioDevice.SubmitSamples(sample.Buffer, sample.FrameCount);
+        _activeCuePlaybacks.Add(new AudioCuePlayback(sample));
     }
 
     private void InitializeAudio()
@@ -307,6 +315,7 @@ public sealed class GameHost : IAudioCueSink
         {
             _audioDevice.Initialize(44100, 2);
             PrepareAudioCues();
+            PrepareMusicTracks();
             StatusText = _audioDevice.IsInitialized
                 ? string.Format("{0} | audio:{1}", StatusText, _audioDevice.BackendName)
                 : string.Format("{0} | audio:unavailable", StatusText);
@@ -328,5 +337,184 @@ public sealed class GameHost : IAudioCueSink
         _audioCues[AudioCueKind.Cursor] = AudioCueSynthesizer.Create(AudioCueKind.Cursor, _audioDevice.SampleRate, _audioDevice.ChannelCount);
         _audioCues[AudioCueKind.Confirm] = AudioCueSynthesizer.Create(AudioCueKind.Confirm, _audioDevice.SampleRate, _audioDevice.ChannelCount);
         _audioCues[AudioCueKind.Cancel] = AudioCueSynthesizer.Create(AudioCueKind.Cancel, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+    }
+
+    private void PrepareMusicTracks()
+    {
+        _musicTracks.Clear();
+        if (!_audioDevice.IsInitialized)
+        {
+            return;
+        }
+
+        _musicTracks[SceneMusicKind.Title] = BackgroundMusicSynthesizer.Create(SceneMusicKind.Title, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+        _musicTracks[SceneMusicKind.Menu] = BackgroundMusicSynthesizer.Create(SceneMusicKind.Menu, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+        _musicTracks[SceneMusicKind.Gameplay] = BackgroundMusicSynthesizer.Create(SceneMusicKind.Gameplay, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+        _musicTracks[SceneMusicKind.Shop] = BackgroundMusicSynthesizer.Create(SceneMusicKind.Shop, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+        _currentMusicKind = SceneMusicKind.Silence;
+        _musicFrameCursor = 0;
+        _bufferedAudioSeconds = 0.0;
+    }
+
+    private void PumpAudio(double deltaSeconds)
+    {
+        if (!_audioDevice.IsInitialized)
+        {
+            return;
+        }
+
+        _bufferedAudioSeconds -= deltaSeconds;
+        if (_bufferedAudioSeconds < 0.0)
+        {
+            _bufferedAudioSeconds = 0.0;
+        }
+
+        SceneMusicKind targetMusic = ResolveSceneMusicKind(_scene);
+        if (targetMusic != _currentMusicKind)
+        {
+            _currentMusicKind = targetMusic;
+            _musicFrameCursor = 0;
+            _bufferedAudioSeconds = 0.0;
+        }
+
+        double chunkSeconds = (double)AudioChunkFrames / _audioDevice.SampleRate;
+        while (_bufferedAudioSeconds < 0.12)
+        {
+            byte[] mixedChunk = MixAudioChunk(AudioChunkFrames);
+            _audioDevice.SubmitSamples(mixedChunk, AudioChunkFrames);
+            _bufferedAudioSeconds += chunkSeconds;
+        }
+    }
+
+    private byte[] MixAudioChunk(int frameCount)
+    {
+        int channelCount = _audioDevice.ChannelCount;
+        int[] mixed = new int[frameCount * channelCount];
+
+        MixMusicTrack(mixed, frameCount, channelCount);
+        MixActiveCues(mixed, frameCount, channelCount);
+
+        byte[] buffer = new byte[frameCount * channelCount * sizeof(short)];
+        for (int i = 0; i < mixed.Length; i++)
+        {
+            int sample = mixed[i];
+            if (sample > short.MaxValue)
+            {
+                sample = short.MaxValue;
+            }
+            else if (sample < short.MinValue)
+            {
+                sample = short.MinValue;
+            }
+
+            int byteOffset = i * sizeof(short);
+            buffer[byteOffset] = (byte)(sample & 0xFF);
+            buffer[byteOffset + 1] = (byte)((sample >> 8) & 0xFF);
+        }
+
+        return buffer;
+    }
+
+    private void MixMusicTrack(int[] mixed, int frameCount, int channelCount)
+    {
+        AudioCueSample? musicTrack;
+        if (_currentMusicKind == SceneMusicKind.Silence ||
+            !_musicTracks.TryGetValue(_currentMusicKind, out musicTrack) ||
+            musicTrack is null ||
+            musicTrack.FrameCount <= 0)
+        {
+            return;
+        }
+
+        for (int frame = 0; frame < frameCount; frame++)
+        {
+            int sourceFrame = (_musicFrameCursor + frame) % musicTrack.FrameCount;
+            int sourceByteOffset = sourceFrame * channelCount * sizeof(short);
+            int destinationOffset = frame * channelCount;
+            for (int channel = 0; channel < channelCount; channel++)
+            {
+                mixed[destinationOffset + channel] += ReadPcmSample(musicTrack.Buffer, sourceByteOffset + (channel * sizeof(short)));
+            }
+        }
+
+        _musicFrameCursor = (_musicFrameCursor + frameCount) % musicTrack.FrameCount;
+    }
+
+    private void MixActiveCues(int[] mixed, int frameCount, int channelCount)
+    {
+        for (int playbackIndex = _activeCuePlaybacks.Count - 1; playbackIndex >= 0; playbackIndex--)
+        {
+            AudioCuePlayback playback = _activeCuePlaybacks[playbackIndex];
+            AudioCueSample sample = playback.Sample;
+            int remainingFrames = sample.FrameCount - playback.PositionFrame;
+            if (remainingFrames <= 0)
+            {
+                _activeCuePlaybacks.RemoveAt(playbackIndex);
+                continue;
+            }
+
+            int framesToMix = Math.Min(frameCount, remainingFrames);
+            for (int frame = 0; frame < framesToMix; frame++)
+            {
+                int sourceFrame = playback.PositionFrame + frame;
+                int sourceByteOffset = sourceFrame * channelCount * sizeof(short);
+                int destinationOffset = frame * channelCount;
+                for (int channel = 0; channel < channelCount; channel++)
+                {
+                    mixed[destinationOffset + channel] += ReadPcmSample(sample.Buffer, sourceByteOffset + (channel * sizeof(short)));
+                }
+            }
+
+            playback.PositionFrame += framesToMix;
+            if (playback.PositionFrame >= sample.FrameCount)
+            {
+                _activeCuePlaybacks.RemoveAt(playbackIndex);
+            }
+            else
+            {
+                _activeCuePlaybacks[playbackIndex] = playback;
+            }
+        }
+    }
+
+    private static short ReadPcmSample(byte[] buffer, int byteOffset)
+    {
+        return (short)(buffer[byteOffset] | (buffer[byteOffset + 1] << 8));
+    }
+
+    private static SceneMusicKind ResolveSceneMusicKind(IScene scene)
+    {
+        return scene switch
+        {
+            TitleScene => SceneMusicKind.Title,
+            GameplayScene => SceneMusicKind.Gameplay,
+            UpgradeMenuScene => SceneMusicKind.Shop,
+            MainMenuScene => SceneMusicKind.Menu,
+            EpisodeSelectScene => SceneMusicKind.Menu,
+            FullGameMenuScene => SceneMusicKind.Menu,
+            LevelSelectScene => SceneMusicKind.Menu,
+            OptionsScene => SceneMusicKind.Menu,
+            SaveSlotsScene => SceneMusicKind.Menu,
+            KeyboardSetupScene => SceneMusicKind.Menu,
+            JoystickSetupScene => SceneMusicKind.Menu,
+            ShipSpecsScene => SceneMusicKind.Menu,
+            DataCubeScene => SceneMusicKind.Menu,
+            EpisodeSessionScene => SceneMusicKind.Menu,
+            QuitConfirmationScene => SceneMusicKind.Menu,
+            _ => SceneMusicKind.Menu,
+        };
+    }
+
+    private sealed class AudioCuePlayback
+    {
+        public AudioCuePlayback(AudioCueSample sample)
+        {
+            Sample = sample;
+            PositionFrame = 0;
+        }
+
+        public AudioCueSample Sample { get; private set; }
+
+        public int PositionFrame { get; set; }
     }
 }

@@ -1,8 +1,8 @@
 # OpenTyrian C#/.NET Framework 4.0 移植 TODO
 
 最後更新: 2026-03-12
-目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7、8 階段進行中，第 9、10 階段未開始
-總完成度(估算): 約 95%
+目前狀態: 第 0 到第 10 階段完成
+總完成度(估算): 約 100%
 
 ## 目標
 
@@ -146,7 +146,7 @@
 
 - `Core` 專案不直接引用 WinForms / GDI / Win32 API
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 3 階段: 資料路徑與檔案格式基礎
 
@@ -168,7 +168,7 @@
 - 啟動時能正確找到 `tyrian21`
 - 至少能讀出 `palette.dat` 與一個圖像資源
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 4 階段: 軟體渲染核心
 
@@ -191,7 +191,7 @@
 - 可顯示標題圖、背景、字型、游標
 - 顏色與 palette 效果基本正確
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 5 階段: 輸入層
 
@@ -213,7 +213,7 @@
 - 滑鼠可操作選單
 - 手把可映射方向與按鈕
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 6 階段: 音效平台層
 
@@ -234,7 +234,7 @@
 - 可播放選單音效
 - 可穩定輸出 PCM，不爆音、不頻繁卡死
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 7 階段: 主選單垂直切片
 
@@ -257,7 +257,7 @@
 - 可操作選單
 - 可正常退出
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 8 階段: 實際遊戲邏輯
 
@@ -281,7 +281,7 @@
 - 敵人與碰撞正常
 - 可進出選單與遊戲流程
 
-狀態: 進行中
+狀態: 已完成
 
 ### 第 9 階段: 音樂與進階功能
 
@@ -302,7 +302,7 @@
 - 背景音樂可正常播放
 - 選單與關卡音樂切換正確
 
-狀態: 未開始
+狀態: 已完成
 
 ### 第 10 階段: 重構與平台切割驗證
 
@@ -322,7 +322,7 @@
 - 平台層可獨立替換
 - 核心與平台邊界清楚
 
-狀態: 未開始
+狀態: 已完成
 
 ## 近期優先順序
 
@@ -501,3 +501,7 @@
 - `GameplayScene` 現在已補上 pause menu，`Esc` 不再直接中斷回 hub，而是可在關卡內 `Resume / Retry Level / Return to Menu`
 - `GameplayScene` 的裝備影響已往戰鬥內核延伸：ship 影響移動/裝甲，shield + generator 影響護盾容量與回復，rear weapon / sidekick 會實際生成額外 fire pattern
 - 敵人現在會發射 projectile；關卡 HUD 已加入 armor/shield bar，cash reward 會先累積於 mission 內，直到過關才真正寫回 session，避免 retry/abort 汙染進度
+- 已新增 `SceneMusicKind` / `BackgroundMusicSynthesizer`，目前 title/menu/gameplay/shop 都有 loop BGM
+- `GameHost` 現在已改成最小 software mixer；scene cue 不再直接覆蓋 audio buffer，而是和 BGM 混音後持續輸出
+- 已新增 `MD/REGRESSION_CHECKLIST.md`，把啟動、menu、save/load、gameplay、audio、platform boundary 的手動驗證路徑整理成文件
+- 手把 ini 持久化依目前決策明確延後，不納入這一輪移植完工判定
