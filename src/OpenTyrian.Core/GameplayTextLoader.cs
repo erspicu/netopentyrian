@@ -36,6 +36,17 @@ public static class GameplayTextLoader
                     "Quit",
                 ],
                 ShipInfo = BuildDefaultShipInfo(),
+                OptionsMenu =
+                [
+                    "Options",
+                    "Load Game",
+                    "Save Game",
+                    string.Empty,
+                    string.Empty,
+                    "Joystick Setup",
+                    "Keyboard Setup",
+                    "Done",
+                ],
             };
         }
 
@@ -48,6 +59,7 @@ public static class GameplayTextLoader
             MainMenuHelp = catalog.MainMenuHelp,
             FullGameMenu = catalog.FullGameMenu,
             ShipInfo = catalog.ShipInfo,
+            OptionsMenu = catalog.OptionsMenu,
         };
     }
 

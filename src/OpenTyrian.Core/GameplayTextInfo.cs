@@ -9,4 +9,6 @@ public sealed class GameplayTextInfo
     public required IList<string> FullGameMenu { get; init; }
 
     public required IList<ShipDescriptionEntry> ShipInfo { get; init; }
+
+    public required IList<string> OptionsMenu { get; init; }
 }

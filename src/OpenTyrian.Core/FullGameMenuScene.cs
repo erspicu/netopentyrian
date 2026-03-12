@@ -131,9 +131,10 @@ public sealed class FullGameMenuScene : IScene
             "data_cubes" => new DataCubeScene(_sessionState, returnToFullGameMenu: true),
             "ship_specs" => new ShipSpecsScene(_sessionState),
             "upgrade_ship" => new UpgradeMenuScene(_sessionState, returnToFullGameMenu: true),
+            "options" => new OptionsScene(_sessionState),
             "next_level" => new LevelSelectScene(_sessionState),
             "session_state" => new EpisodeSessionScene(_sessionState, returnToFullGameMenu: true),
-            "quit_episode" => new EpisodeSelectScene(_sessionState.StartMode),
+            "quit_episode" => new QuitConfirmationScene(_sessionState),
             _ => null,
         };
     }
@@ -185,8 +186,7 @@ public sealed class FullGameMenuScene : IScene
                 {
                     Id = "options",
                     Label = labels.Count > 4 ? labels[4] : "Options",
-                    Description = "Options menu is not wired yet.",
-                    IsEnabled = false,
+                    Description = "Open the configuration menu slice.",
                 },
                 new MenuItemDefinition
                 {

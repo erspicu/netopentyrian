@@ -7,13 +7,15 @@ public sealed class TyrianHelpTextCatalog
         IList<string> gameplayNames,
         IList<string> episodeNames,
         IList<string> fullGameMenu,
-        IList<ShipDescriptionEntry> shipInfo)
+        IList<ShipDescriptionEntry> shipInfo,
+        IList<string> optionsMenu)
     {
         MainMenuHelp = mainMenuHelp;
         GameplayNames = gameplayNames;
         EpisodeNames = episodeNames;
         FullGameMenu = fullGameMenu;
         ShipInfo = shipInfo;
+        OptionsMenu = optionsMenu;
     }
 
     public IList<string> MainMenuHelp { get; }
@@ -25,4 +27,6 @@ public sealed class TyrianHelpTextCatalog
     public IList<string> FullGameMenu { get; }
 
     public IList<ShipDescriptionEntry> ShipInfo { get; }
+
+    public IList<string> OptionsMenu { get; }
 }

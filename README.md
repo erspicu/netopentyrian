@@ -58,6 +58,8 @@
 - full-game hub 的 `Ship Specs` 已啟用，會顯示目前 ship / shield / generator / weapon / sidekick 摘要
 - `tyrian.hdt` 已開始額外載入 ship info 兩段文字，`ShipSpecsScene` 會優先顯示真實 ship 說明
 - `ItemCatalog` 已擴充 ship / shield / generator / weapon 的基礎 stat metadata，供 ship specs 與後續 UI 顯示使用
+- full-game hub 的 `Options` 已接成可進入的 menu scene，並開始使用 `tyrian.hdt` 的 options menu 文字
+- `Quit` 現在不再直接跳回 episode select，而是先進入最小 confirmation scene
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 
@@ -94,5 +96,5 @@
 
 - 繼續把 `game_menu.c`、`mainint.c`、`episodes.c` 的主流程往 C# scene / state 模型對齊
 - 補完整輸入層、音效層與更多 episode script command
-- 將 full-game hub、upgrade/shop、next-level、ship specs 再往上游互動對齊
+- 將 full-game hub、upgrade/shop、next-level、ship specs、options 再往上游互動對齊
 - network 對應流程維持停用，不再規劃 `network.c`
