@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 60%
+總完成度(估算): 約 61%
 
 ## 目標
 
@@ -478,3 +478,5 @@
 - `TyrianHelpTextLoader` / `GameplayTextLoader` 已額外讀取 `tyrian.hdt` 的 options menu 文字，供 `OptionsScene` 使用
 - 已新增 `IAudioDevice` 平台介面，`GameHost` 建構流程與 shutdown path 都已開始透過平台抽象處理音效裝置
 - WinForms 端已新增 `SilentAudioDevice`，目前先提供 `.NET Framework 4.0` 下不依賴額外套件的 audio lifecycle 骨架，為後續 waveOut backend 鋪底
+- WinForms 端已新增 `WaveOutAudioDevice`，目前會直接開啟 WinMM/waveOut 裝置並管理 pinned buffer/header lifecycle，正式把第 6 階段推進到真實 backend 層
+- `GameHost` 啟動狀態列現在會反映 audio backend 初始化結果，但尚未接上真正的 menu/game PCM、混音與 OPL

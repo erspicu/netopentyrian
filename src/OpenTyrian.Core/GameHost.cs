@@ -261,7 +261,9 @@ public sealed class GameHost
         try
         {
             _audioDevice.Initialize(44100, 2);
-            StatusText = string.Format("{0} | audio:{1}", StatusText, _audioDevice.BackendName);
+            StatusText = _audioDevice.IsInitialized
+                ? string.Format("{0} | audio:{1}", StatusText, _audioDevice.BackendName)
+                : string.Format("{0} | audio:unavailable", StatusText);
         }
         catch (Exception ex)
         {

@@ -60,8 +60,9 @@
 - `ItemCatalog` 已擴充 ship / shield / generator / weapon 的基礎 stat metadata，供 ship specs 與後續 UI 顯示使用
 - full-game hub 的 `Options` 已接成可進入的 menu scene，並開始使用 `tyrian.hdt` 的 options menu 文字
 - `Quit` 現在不再直接跳回 episode select，而是先進入最小 confirmation scene
-- 已建立 `IAudioDevice` 平台介面並接入 `GameHost`，WinForms 端目前先使用 `SilentAudioDevice`
-- 音效平台層已開始進場，但目前只完成初始化 / lifecycle 骨架，尚未接上 waveOut、混音與 OPL
+- 已建立 `IAudioDevice` 平台介面並接入 `GameHost`，silent backend 仍保留作 fallback scaffolding
+- WinForms 端預設已切到 `WaveOutAudioDevice`，會直接開啟 WinMM/waveOut backend；目前尚未餵入實際遊戲 PCM，因此仍屬於 backend 建置階段
+- 音效平台層已開始進場，但目前還沒接上真正的 menu/game PCM、混音與 OPL
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 
