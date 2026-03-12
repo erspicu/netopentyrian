@@ -2,6 +2,8 @@ namespace OpenTyrian.Core;
 
 public sealed class UpgradeMenuScene : IScene
 {
+    private const int VisibleSubmenuRows = 6;
+
     private enum UpgradeMenuMode
     {
         CategorySelect,
@@ -210,14 +212,18 @@ public sealed class UpgradeMenuScene : IScene
         int equippedItemId,
         bool submenuOpen)
     {
-        int visibleCount = Math.Min(6, Math.Max(1, selectedCategory.ItemCount + 1));
+        int totalRows = Math.Max(1, selectedCategory.ItemCount + 1);
+        int visibleCount = Math.Min(VisibleSubmenuRows, totalRows);
+        int windowStart = GetWindowStart(selectedSlot, totalRows, visibleCount);
+
         for (int i = 0; i < visibleCount; i++)
         {
+            int rowIndex = windowStart + i;
             int y = 98 + (i * 12);
-            bool isDoneRow = i == visibleCount - 1 && selectedCategory.ItemCount < 6;
+            bool isDoneRow = rowIndex >= selectedCategory.ItemCount;
             bool isSelected = submenuOpen && (isDoneRow
                 ? selectedSlot >= selectedCategory.ItemCount
-                : i == selectedSlot);
+                : rowIndex == selectedSlot);
 
             string label;
             byte hue;
@@ -229,9 +235,9 @@ public sealed class UpgradeMenuScene : IScene
                 hue = isSelected ? (byte)15 : (byte)12;
                 value = isSelected ? 4 : 0;
             }
-            else if (i < selectedCategory.ItemCount)
+            else if (rowIndex < selectedCategory.ItemCount)
             {
-                int itemId = selectedCategory.ItemIds[i];
+                int itemId = selectedCategory.ItemIds[rowIndex];
                 bool isPrepared = confirmedItemId.HasValue && confirmedItemId.Value == itemId;
                 bool isEquipped = equippedItemId == itemId;
                 label = BuildItemLabel(selectedCategory, itemId, isPrepared, isEquipped);
@@ -259,6 +265,33 @@ public sealed class UpgradeMenuScene : IScene
                 fontRenderer.DrawText(surface, 204, y, label, FontKind.Tiny, FontAlignment.Left, hue, value, shadow: true);
             }
         }
+
+        if (windowStart > 0)
+        {
+            fontRenderer.DrawText(surface, 284, 90, "^", FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
+        }
+
+        if (windowStart + visibleCount < totalRows)
+        {
+            fontRenderer.DrawText(surface, 284, 98 + (visibleCount * 12), "v", FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
+        }
+    }
+
+    private static int GetWindowStart(int selectedSlot, int totalRows, int visibleCount)
+    {
+        if (totalRows <= visibleCount)
+        {
+            return 0;
+        }
+
+        int preferredStart = selectedSlot - (visibleCount / 2);
+        if (preferredStart < 0)
+        {
+            return 0;
+        }
+
+        int maxStart = totalRows - visibleCount;
+        return Math.Min(preferredStart, maxStart);
     }
 
     private string BuildFooterText()

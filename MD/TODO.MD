@@ -433,3 +433,4 @@
 - 已將商店分類語意校正到上游 `playeritem_map()` / `itemAvailMap()`，現在 loadout 會完整追蹤 `ship/front/rear/shield/generator/left/right sidekick` 七類裝備
 - `UpgradeMenuScene` 進入時已會依當前 loadout 對齊各分類預設 slot，行為開始接近上游 `JE_genItemMenu()` 會預設選到目前裝備項目的方式
 - `UpgradeMenuScene` 已改成兩層互動：先選分類、再進 submenu 選 item，`Esc` 可從 submenu 返回分類層，整體流程更接近上游 `MENU_UPGRADES -> MENU_UPGRADE_SUB`
+- `UpgradeMenuScene` 的 submenu 已支援可捲動視窗，分類項目超過可視列數時，清單會跟著目前 slot 移動，並顯示上下提示
