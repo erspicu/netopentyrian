@@ -92,6 +92,7 @@ public sealed class GameHost : IAudioCueSink
             PaletteCount = PaletteCount,
             AudioCueSink = this,
             SaveSlots = _saveSlots,
+            InputConfigurator = _inputSource as OpenTyrian.Platform.IInputConfigurator,
             TitleImage = _titleImage,
             TestPcxImage = _testPcxImage,
             TestSpriteSheet = _testSpriteSheet,

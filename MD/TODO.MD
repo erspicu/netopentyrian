@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 63%
+總完成度(估算): 約 64%
 
 ## 目標
 
@@ -485,3 +485,5 @@
 - 已新增 `IUserFileStore` / `FileSystemUserFileStore`，目前先把 user file root 收斂到執行檔 base directory，為後續 `tyrian.sav` / `tyrian.cfg` 路徑切割鋪底
 - 已新增 `SaveSlotCatalogLoader`，目前可解碼並驗證 `tyrian.sav` checksum，並抽出 22 個 save slot 的 name / level / episode / cube / cash metadata
 - `OptionsScene` 的 `Load Game / Save Game` 已從停用改成可進入 `SaveSlotsScene`，目前先提供 read-only slot browser，不直接寫入或載入遊戲狀態
+- 已新增 `IInputConfigurator` 與 `KeyboardSetupScene`，`Options -> Keyboard Setup` 已從停用改成可進入，會顯示六個核心按鍵綁定
+- `WinFormsInputSource` 已改成真正持有 binding profile，支援 pending rebind / reset defaults；目前至少可對 `Up/Down/Left/Right/Confirm/Cancel` 做最小 rebind

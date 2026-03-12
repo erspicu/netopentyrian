@@ -66,6 +66,7 @@
 - 已建立 scene -> host 的 audio cue 路徑，title / main menu / episode select / full-game hub / shop / data cube / options 等互動現在會送出最小 PCM 提示音
 - 已新增 `IUserFileStore` 與 `tyrian.sav` 解碼路徑，`Options` 底下的 `Load Game / Save Game` 現在可進入 read-only slot browser
 - load/save scene 目前只會瀏覽與顯示 slot metadata，不會真的載入或寫回存檔
+- `Options -> Keyboard Setup` 現在可進入，會顯示目前六個核心按鍵綁定並支援最小 rebind / reset defaults
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 

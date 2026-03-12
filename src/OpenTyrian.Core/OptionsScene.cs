@@ -104,6 +104,7 @@ public sealed class OptionsScene : IScene
         {
             "load_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Load),
             "save_game" => new SaveSlotsScene(_sessionState, resources.SaveSlots ?? BuildFallbackCatalog(), SaveBrowserMode.Save),
+            "keyboard" => new KeyboardSetupScene(_sessionState),
             _ => new FullGameMenuScene(_sessionState),
         };
     }
@@ -142,8 +143,7 @@ public sealed class OptionsScene : IScene
                 {
                     Id = "keyboard",
                     Label = GetLabel(labels, 6, "Keyboard Setup"),
-                    Description = "Keyboard remapping is not wired yet.",
-                    IsEnabled = false,
+                    Description = "Inspect and rebind the six core menu/game buttons.",
                 },
                 new MenuItemDefinition
                 {

@@ -8,6 +8,8 @@ public sealed class SceneResources
 
     public SaveSlotCatalog? SaveSlots { get; init; }
 
+    public OpenTyrian.Platform.IInputConfigurator? InputConfigurator { get; init; }
+
     public PicImage? TitleImage { get; init; }
 
     public PcxImage? TestPcxImage { get; init; }
