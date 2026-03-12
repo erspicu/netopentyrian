@@ -44,6 +44,9 @@ for %%F in (
     OpenTyrian.Core.pdb
     OpenTyrian.Platform.dll
     OpenTyrian.Platform.pdb
+    OpenTyrian.NativeMusic.dll
+    OpenTyrian.NativeMusic.pdb
+    tyrian.sav
 ) do (
     if exist "%SOURCE_DIR%\%%F" (
         copy /Y "%SOURCE_DIR%\%%F" "%OUTPUT_DIR%\%%F" >nul
@@ -60,3 +63,4 @@ if exist "%ROOT%tyrian21" (
 
 echo Build output copied to "%OUTPUT_DIR%".
 exit /b 0
+

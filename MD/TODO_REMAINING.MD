@@ -2,21 +2,21 @@
 
 最後更新: 2026-03-13  
 目前狀態: 以這份文件作為後續真實進度基線  
-總完成度(估算): 約 79%
+總完成度(估算): 約 87%
 
 ## 百分比摘要
 
-- 整體完成度(估算): `79%`
+- 整體完成度(估算): `87%`
 - 啟動與 title 主樹: `72%`
 - New Game 子樹: `54%`
-- Title 其他分支: `52%`
-- Title Setup 與 Jukebox: `62%`
-- 音樂與音效時機: `57%`
+- Title 其他分支: `60%`
+- Title Setup 與 Jukebox: `82%`
+- 音樂與音效時機: `84%`
 - Full Game / In-game 主流程: `45%`
 - Full Game hub / item screen parity: `40%`
 - 視覺與版面: `55%`
 - 資料與存檔對齊: `60%`
-- Input / Demo / Regression: `45%`
+- Input / Demo / Regression: `50%`
 
 ## 更新規則
 
@@ -47,7 +47,7 @@
 4. `New Game` 樹不完整
    - 缺 `difficultySelect()`
    - `gameplaySelect()` 目前掛在錯的位置
-5. `Jukebox` 尚未完成為原版可用分支
+5. `Jukebox` 已可切到真實 `music.mus` 曲目，但畫面與操作細節仍未完全對齊原版
 6. `JE_main()` 只做了最小 gameplay slice，不是原版完整主流程
 
 ## 依序處理清單
@@ -87,13 +87,14 @@
 
 ### 第 3 組: Title 其他分支
 
-狀態: 進行中，已達約 52%
+狀態: 進行中，已達約 60%
 
 1. `Load Game`
    - 從 title menu 直接可進
    - 取消時回到 title menu，不再回錯到 in-game options
 2. `High Scores`
-   - 正確讀取/排序顯示存檔內 high score 資料
+   - 已改成 episode 分頁 + `One Player / Two Player` 雙區塊版面
+   - 已直接讀 `tyrian.sav` 內前 18 筆 high score record，較接近原版資料來源
 3. `Instructions`
    - 先做最小多頁版
    - 後續再逼近原版 `JE_helpSystem()`
@@ -107,7 +108,7 @@
 
 ### 第 4 組: Title Setup 與 Jukebox
 
-狀態: 進行中，已達約 62%
+狀態: 進行中，已達約 82%
 
 1. 建立 title-level `Setup` 分支
 2. `Jukebox` 納入 Setup 必做項
@@ -116,8 +117,9 @@
    - 可切歌
    - 可退出回 Setup
 4. `Jukebox` 後續加強
-   - track label 對齊原版
-   - 若後續補真正 `lds_play` / OPL，Jukebox 要能切到真曲目
+   - 已改成較接近原版的自由操作模式，不再是 action list menu
+   - 已補 `Esc/Q` 返回、方向鍵換曲、`S/R` stop/restart、`Space` 隱藏說明
+   - 已補原版 VGA palette 與近似環狀星場，但畫面細節仍未完全對齊原版 starlib
 
 驗收標準:
 - `Setup -> Jukebox` 可操作
@@ -125,18 +127,20 @@
 
 ### 第 5 組: 音樂與音效時機
 
-狀態: 進行中，已達約 57%
+狀態: 進行中，已達約 84%
 
-1. 修正 logo/title/menu 的 BGM 進場時機
+1. `music.mus -> lds_play -> OPL` 已接入目前 WinForms 版本
 2. scene 與 BGM 對應重新整理
 3. title/menu/cancel/confirm cue 時機重新對齊
-4. 真正原版音樂播放引擎仍屬後續工作
-   - 目前合成式 BGM 只能先求流程對位
-   - 若要聲音內容也對齊，最終還是要處理 `lds_play.c` / `opl.c`
+4. 尚未完成的部分
+   - level / event 專屬曲目切換仍未完整對齊
+   - logo/title/setup/shop/gameplay 的進退場 timing 仍需逐段比對
+   - `Jukebox` 已可對原曲做換曲 / stop / restart，不再只靠 placeholder loop
 
 驗收標準:
 - logo 不提早播 title song
-- title menu、setup、shop、gameplay 的音樂切換時機合理
+- title menu、setup、shop、gameplay 已不再使用 placeholder synth
+- level/event 曲切換與淡入淡出時機後續再補齊
 
 ### 第 6 組: Full Game / In-game 主流程
 
@@ -187,12 +191,13 @@
 
 ### 第 10 組: Input / Demo / Regression
 
-狀態: 待做
+狀態: 進行中，已達約 50%
 
 1. title/menu/demo 的 sendkey / keyboard / mouse 行為要重新驗證
 2. 手把行為先維持目前 runtime 綁定
 3. ini 持久化依既定決策繼續延後
 4. 每完成一組，重新與原版做截圖比對
+5. `compare_jukebox.ps1` 已改成逐段導航與分步截圖，但 C# 版自動導覽仍需持續校正 delay / key route
 
 驗收標準:
 - `temp/compare-versions` 可持續看出差距縮小

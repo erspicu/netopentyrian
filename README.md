@@ -56,7 +56,8 @@
 - `tyrian.hdt` 已額外接入 full-game menu 的 `menuInt[1]` 文字，減少這一段流程的硬編碼
 - 已新增最小 `LevelSelectScene`，可瀏覽 parsed main-level section 並選擇/啟動目前 level
 - 已新增 `GameplayScene` 垂直切片；`Next Level` 現在會真的進入最小 playable mission，支援移動、前/後武器與 sidekick 射擊、敵人生成/敵彈、護盾/裝甲 HUD、pause menu、過關獎勵與 level/save 進度更新
-- `GameHost` 現在已升級為軟體 mixer；title/menu/gameplay/shop 會播放 loop BGM，cursor/confirm/cancel cue 會和 BGM 混音後一起送到 audio backend
+- `GameHost` 目前會把 scene cue 和背景音樂一起混音；title/menu/shop/jukebox/gameplay 已優先走原版 `music.mus -> LDS -> OPL` 播放鏈，保留合成式 BGM 作 fallback
+- `Jukebox` 已改成較接近原版的自由操作模式，支援方向鍵換曲、`S/R` stop/restart、`Space` 隱藏提示，並套用原版 VGA palette 類型的獨立色盤
 - full-game hub 的 `Ship Specs` 已啟用，會顯示目前 ship / shield / generator / weapon / sidekick 摘要
 - `tyrian.hdt` 已開始額外載入 ship info 兩段文字，`ShipSpecsScene` 會優先顯示真實 ship 說明
 - `ItemCatalog` 已擴充 ship / shield / generator / weapon 的基礎 stat metadata，供 ship specs 與後續 UI 顯示使用
@@ -65,7 +66,7 @@
 - 已建立 `IAudioDevice` 平台介面並接入 `GameHost`，silent backend 仍保留作 fallback scaffolding
 - WinForms 端預設已切到 `WaveOutAudioDevice`，會直接開啟 WinMM/waveOut backend
 - `GameHost` 現在會主動混音 scene cue 與 loop BGM，再以固定 chunk 持續送入 audio backend
-- title / main menu / episode select / full-game hub / gameplay / shop / data cube / options 等 scene 已具備最小音效或 BGM 切換
+- title / main menu / episode select / full-game hub / gameplay / shop / data cube / options 等 scene 已具備最小音效或 BGM 切換，其中主要場景與 Jukebox 已接到原版曲目資料
 - 已新增 `IUserFileStore` 與 `tyrian.sav` 讀寫路徑，`Options` 底下的 `Load Game / Save Game` 現在會真的讀出 slot 並可寫回目前 session
 - `SaveGameFileManager` 會保留原始 `tyrian.sav` 加密/checksum 格式，`Load Game` 目前可把 slot 的 episode/level/cash/loadout 套回 session，`Save Game` 會把目前 session 寫回 slot
 - `Save Game` 不再直接覆寫預設名稱；WinForms 已補上最小文字輸入佇列，存檔畫面可編輯 14 字元 ASCII slot name，再寫回 `tyrian.sav`
@@ -73,11 +74,11 @@
 - `Options -> Joystick Setup` 現在可進入，WinForms 輸入層已改成輪詢 `XInput + DirectInput`，並可對六個核心按鍵做最小手把重綁
 - 手把綁定目前先保存在執行期間記憶體內；之後會再依 `tool/aprnes.ini` 類似的 key/value 格式補上 ini 讀寫
 
-目前主體移植已收斂到可啟動、可操作 menu、可進關卡、可存讀檔、可播放最小 BGM/cue、可用鍵鼠手把操作的狀態。
+目前主體移植已收斂到可啟動、可操作 menu、可進關卡、可存讀檔、可播放原版 `music.mus` 場景音樂與最小 cue、可用鍵鼠手把操作的狀態。
 
 ## 建置方式
 
-目前這個工作環境使用 Visual Studio 的 `MSBuild.exe` 建置最穩定。優先直接用根目錄的 `build.ps1`，它會自動偵測常見 Visual Studio / Build Tools 安裝位置，並先 restore 再 build：
+目前這個工作環境使用 Visual Studio 的 `MSBuild.exe` 建置最穩定。優先直接用根目錄的 `build.ps1`，它會自動偵測常見 Visual Studio / Build Tools 安裝位置，先編出 native `OpenTyrian.NativeMusic.dll`，再 restore + build .NET solution：
 
 ```powershell
 .\build.ps1 -Configuration Debug
@@ -106,6 +107,6 @@
 
 ## 後續方向
 
-- 若要再逼近原版，可把合成式 BGM 換成真正的 OPL / `lds_play` 移植
+- 目前已接入 native `music.mus` / `lds_play` / `opl` 播放鏈；後續重點改成補齊 level/event 曲目切換與更細的音樂 timing
 - 手把綁定 ini 持久化依目前決策延後，等專案主體完成後再決定格式
 - network 對應流程維持停用，不再規劃 `network.c`

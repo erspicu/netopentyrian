@@ -1,66 +1,20 @@
 namespace OpenTyrian.Core;
 
-public sealed class JukeboxScene : IScene, IScenePresentation, ICustomMusicScene
+public sealed class JukeboxScene : IScene, IScenePresentation, ICustomMusicScene, ICustomPaletteScene
 {
-    private static readonly string[] TrackTitles =
-    {
-        "Asteroid Dance Part 2",
-        "Asteroid Dance Part 1",
-        "Buy/Sell Music",
-        "CAMANIS",
-        "CAMANISE",
-        "Deli Shop Quartet",
-        "Deli Shop Quartet No. 2",
-        "Ending Number 1",
-        "Ending Number 2",
-        "End of Level",
-        "Game Over Solo",
-        "Gryphons of the West",
-        "Somebody pick up the Gryphone",
-        "Gyges, Will You Please Help Me?",
-        "I speak Gygese",
-        "Halloween Ramble",
-        "Tunneling Trolls",
-        "Tyrian, The Level",
-        "The MusicMan",
-        "The Navigator",
-        "Come Back to Me, Savara",
-        "Come Back again to Savara",
-        "Space Journey 1",
-        "Space Journey 2",
-        "The final edge",
-        "START5",
-        "Parlance",
-        "Torm - The Gathering",
-        "TRANSON",
-        "Tyrian: The Song",
-        "ZANAC3",
-        "ZANACS",
-        "Return me to Savara",
-        "High Score Table",
-        "One Mustn't Fall",
-        "Sarah's Song",
-        "A Field for Mag",
-        "Rock Garden",
-        "Quest for Peace",
-        "Composition in Q",
-        "BEER",
-    };
-
-    private static readonly string[] Actions =
-    {
-        "Previous Track",
-        "Next Track",
-        "Random Track",
-        "Stop",
-        "Done",
-    };
-
+    private const int StarCount = 84;
+    private static readonly PaletteColor[] JukeboxPalette = BuildJukeboxPalette();
     private readonly Random _random = new Random();
     private OpenTyrian.Platform.InputSnapshot _previousInput;
     private int _trackIndex;
-    private int _selectedAction;
+    private int _musicRevision;
     private bool _stopped;
+    private bool _hideText;
+
+    public JukeboxScene()
+    {
+        _trackIndex = OriginalMusicCatalog.TitleMusic;
+    }
 
     public int? BackgroundPictureNumber
     {
@@ -74,69 +28,100 @@ public sealed class JukeboxScene : IScene, IScenePresentation, ICustomMusicScene
 
     public string MusicCacheKey
     {
-        get { return _stopped ? "jukebox:stopped" : string.Format("jukebox:{0}", _trackIndex); }
+        get { return string.Format("jukebox:{0}:{1}:{2}", _trackIndex, _stopped ? 1 : 0, _musicRevision); }
     }
 
-    public AudioCueSample CreateMusicTrack(int sampleRate, int channelCount)
+    public int? MusicTrackIndex
+    {
+        get { return _stopped ? (int?)null : _trackIndex; }
+    }
+
+    public bool StopMusic
+    {
+        get { return _stopped; }
+    }
+
+    public AudioCueSample CreateFallbackMusicTrack(int sampleRate, int channelCount)
     {
         return _stopped
             ? new AudioCueSample { Buffer = new byte[0], FrameCount = 0 }
             : BackgroundMusicSynthesizer.CreateJukeboxTrack(_trackIndex, sampleRate, channelCount);
     }
 
+    public PaletteColor[] PaletteOverride
+    {
+        get { return JukeboxPalette; }
+    }
+
     public IScene? Update(SceneResources resources, OpenTyrian.Platform.InputSnapshot input, double deltaSeconds)
     {
+        string typedText = resources.TextEntrySource is null
+            ? string.Empty
+            : resources.TextEntrySource.ConsumeText();
+
         bool cancelPressed = input.Cancel && !_previousInput.Cancel;
         bool confirmPressed = input.Confirm && !_previousInput.Confirm;
         bool upPressed = input.Up && !_previousInput.Up;
         bool downPressed = input.Down && !_previousInput.Down;
         bool leftPressed = input.Left && !_previousInput.Left;
         bool rightPressed = input.Right && !_previousInput.Right;
-        bool pointerConfirmPressed = input.PointerConfirm && !_previousInput.PointerConfirm;
+        bool pointerPressed = (input.PointerConfirm && !_previousInput.PointerConfirm) ||
+            (input.PointerCancel && !_previousInput.PointerCancel);
+        bool spacePressed = typedText.IndexOf(' ') >= 0;
 
-        int? hoveredIndex = input.PointerPresent ? HitTestAction(input.PointerX, input.PointerY) : null;
-        if (hoveredIndex.HasValue)
-        {
-            if (_selectedAction != hoveredIndex.Value)
-            {
-                SceneAudio.PlayCursor(resources);
-            }
-
-            _selectedAction = hoveredIndex.Value;
-        }
-
-        if (cancelPressed)
+        if (ContainsCommand(typedText, 'Q') || cancelPressed || pointerPressed)
         {
             SceneAudio.PlayCancel(resources);
             _previousInput = input;
             return new TitleSetupScene();
         }
 
-        if (leftPressed)
+        if (spacePressed)
+        {
+            SceneAudio.PlayCursor(resources);
+            _hideText = !_hideText;
+        }
+
+        if (ContainsCommand(typedText, 'S'))
+        {
+            SceneAudio.PlayCancel(resources);
+            StopTrack();
+        }
+
+        if (ContainsCommand(typedText, 'R'))
+        {
+            SceneAudio.PlayConfirm(resources);
+            RestartTrack();
+        }
+
+        if (ContainsCommand(typedText, 'P'))
         {
             SceneAudio.PlayCursor(resources);
             SelectPreviousTrack();
         }
-        else if (rightPressed)
+
+        if (ContainsCommand(typedText, 'N'))
         {
             SceneAudio.PlayCursor(resources);
             SelectNextTrack();
         }
-        else if (upPressed)
+
+        if (ContainsCommand(typedText, 'A'))
         {
             SceneAudio.PlayCursor(resources);
-            _selectedAction = _selectedAction == 0 ? Actions.Length - 1 : _selectedAction - 1;
-        }
-        else if (downPressed)
-        {
-            SceneAudio.PlayCursor(resources);
-            _selectedAction = (_selectedAction + 1) % Actions.Length;
+            _trackIndex = _random.Next(OriginalMusicCatalog.Titles.Length);
+            ResumeTrack();
         }
 
-        if (confirmPressed || (pointerConfirmPressed && hoveredIndex.HasValue))
+        if (leftPressed || upPressed)
         {
-            _previousInput = input;
-            return ExecuteSelectedAction(resources);
+            SceneAudio.PlayCursor(resources);
+            SelectPreviousTrack();
+        }
+        else if (rightPressed || downPressed || (confirmPressed && !spacePressed))
+        {
+            SceneAudio.PlayCursor(resources);
+            SelectNextTrack();
         }
 
         _previousInput = input;
@@ -145,91 +130,197 @@ public sealed class JukeboxScene : IScene, IScenePresentation, ICustomMusicScene
 
     public void Render(IndexedFrameBuffer surface, SceneResources resources, double timeSeconds)
     {
-        TitleScreenRenderer.RenderPictureBackground(surface, resources, 2, includeOverlays: false);
-        if (resources.FontRenderer is null)
+        Vga256.Clear(surface, 0);
+        RenderStarField(surface, timeSeconds);
+
+        if (resources.FontRenderer is null || _hideText)
         {
             return;
         }
 
-        resources.FontRenderer.DrawShadowText(surface, 160, 20, "Jukebox", FontKind.Normal, FontAlignment.Center, 15, -3, black: false, shadowDistance: 2);
-        resources.FontRenderer.DrawText(surface, 160, 52, string.Format("Track {0} / {1}", _trackIndex + 1, TrackTitles.Length), FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawShadowText(surface, 160, 68, TrackTitles[_trackIndex], FontKind.Small, FontAlignment.Center, 15, 0, black: false, shadowDistance: 1);
-        resources.FontRenderer.DrawText(surface, 160, 84, _stopped ? "Stopped" : "Playing", FontKind.Tiny, FontAlignment.Center, _stopped ? (byte)12 : (byte)13, 0, shadow: true);
+        string trackLabel = string.Format("{0} {1}", _trackIndex + 1, OriginalMusicCatalog.Titles[_trackIndex]);
+        resources.FontRenderer.DrawText(surface, 160, 170, "Press ESC to quit the jukebox.", FontKind.Tiny, FontAlignment.Center, 15, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 180, "Arrow keys change the song being played.", FontKind.Tiny, FontAlignment.Center, 15, 0, shadow: true);
+        resources.FontRenderer.DrawText(surface, 160, 190, trackLabel, FontKind.Tiny, FontAlignment.Center, 15, 4, shadow: true);
 
-        for (int i = 0; i < Actions.Length; i++)
+        if (_stopped)
         {
-            string label = i == 3 ? (_stopped ? "Resume" : "Stop") : Actions[i];
-            int y = 116 + (i * 14);
-            if (i == _selectedAction)
-            {
-                resources.FontRenderer.DrawBlendText(surface, 160, y, label, FontKind.Small, FontAlignment.Center, 15, 1);
-            }
-            else
-            {
-                resources.FontRenderer.DrawText(surface, 160, y, label, FontKind.Small, FontAlignment.Center, 15, -3, shadow: true);
-            }
+            resources.FontRenderer.DrawDark(surface, 160, 160, "Stopped - press Enter or R to restart.", FontKind.Tiny, FontAlignment.Center, black: false);
         }
-
-        resources.FontRenderer.DrawText(surface, 160, 188, "Left/Right track  Up/Down action  Enter confirm", FontKind.Tiny, FontAlignment.Center, 13, 0, shadow: true);
-        resources.FontRenderer.DrawDark(surface, 160, 196, "Esc returns to Setup", FontKind.Tiny, FontAlignment.Center, black: false);
-    }
-
-    private IScene? ExecuteSelectedAction(SceneResources resources)
-    {
-        switch (_selectedAction)
+        else
         {
-            case 0:
-                SceneAudio.PlayCursor(resources);
-                SelectPreviousTrack();
-                return null;
-            case 1:
-                SceneAudio.PlayCursor(resources);
-                SelectNextTrack();
-                return null;
-            case 2:
-                SceneAudio.PlayCursor(resources);
-                _trackIndex = _random.Next(TrackTitles.Length);
-                _stopped = false;
-                return null;
-            case 3:
-                SceneAudio.PlayConfirm(resources);
-                _stopped = !_stopped;
-                return null;
-            default:
-                SceneAudio.PlayConfirm(resources);
-                return new TitleSetupScene();
+            resources.FontRenderer.DrawDark(surface, 160, 160, "Space hides text. S stops. R restarts.", FontKind.Tiny, FontAlignment.Center, black: false);
         }
     }
 
     private void SelectPreviousTrack()
     {
-        _trackIndex = _trackIndex == 0 ? TrackTitles.Length - 1 : _trackIndex - 1;
-        _stopped = false;
+        _trackIndex = _trackIndex == 0 ? OriginalMusicCatalog.Titles.Length - 1 : _trackIndex - 1;
+        ResumeTrack();
     }
 
     private void SelectNextTrack()
     {
-        _trackIndex = (_trackIndex + 1) % TrackTitles.Length;
-        _stopped = false;
+        _trackIndex = (_trackIndex + 1) % OriginalMusicCatalog.Titles.Length;
+        ResumeTrack();
     }
 
-    private static int? HitTestAction(int x, int y)
+    private void ResumeTrack()
     {
-        if (x < 82 || x > 238)
+        _stopped = false;
+        _musicRevision++;
+    }
+
+    private void RestartTrack()
+    {
+        _stopped = false;
+        _musicRevision++;
+    }
+
+    private void StopTrack()
+    {
+        if (_stopped)
         {
-            return null;
+            return;
         }
 
-        for (int i = 0; i < Actions.Length; i++)
+        _stopped = true;
+        _musicRevision++;
+    }
+
+    private static bool ContainsCommand(string typedText, char command)
+    {
+        return typedText.IndexOf(command.ToString(), StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private static void RenderStarField(IndexedFrameBuffer surface, double timeSeconds)
+    {
+        const int centerX = 160;
+        const int centerY = 100;
+        int[] ringRadii = { 24, 32, 40, 50, 62, 74, 86 };
+        byte[] ringColors = { 11, 10, 9, 13, 12, 14, 15 };
+
+        for (int ringIndex = 0; ringIndex < ringRadii.Length; ringIndex++)
         {
-            int top = 114 + (i * 14);
-            int bottom = top + 12;
-            if (y >= top && y <= bottom)
+            int radius = ringRadii[ringIndex];
+            int pointCount = 28 + (ringIndex * 10);
+            double rotation = timeSeconds * (0.4 + (ringIndex * 0.11)) * (ringIndex % 2 == 0 ? 1.0 : -1.0);
+
+            for (int pointIndex = 0; pointIndex < pointCount; pointIndex++)
             {
-                return i;
+                double angle = ((Math.PI * 2.0) * pointIndex / pointCount) + rotation;
+                int x = centerX + (int)Math.Round(Math.Cos(angle) * radius);
+                int y = centerY + (int)Math.Round(Math.Sin(angle) * (radius * 0.72));
+                byte color = ringColors[(ringIndex + pointIndex) % ringColors.Length];
+
+                if ((pointIndex + ringIndex) % 4 == 0)
+                {
+                    Vga256.PutCrossPixel(surface, x, y, color);
+                }
+                else
+                {
+                    Vga256.PutPixel(surface, x, y, color);
+                }
             }
         }
 
-        return null;
+        for (int i = 0; i < StarCount; i++)
+        {
+            int baseX = (i * 37) % surface.Width;
+            int baseY = (i * 61) % surface.Height;
+            int x = (baseX + (int)(Math.Sin(timeSeconds + (i * 0.21)) * 5.0) + surface.Width) % surface.Width;
+            int y = (baseY + (int)(timeSeconds * (3.0 + (i % 5)) * 5.0)) % surface.Height;
+            byte color = (byte)(i % 6 == 0 ? 15 : (i % 2 == 0 ? 6 : 2));
+
+            Vga256.PutPixel(surface, x, y, color);
+        }
+    }
+
+    private static PaletteColor[] BuildJukeboxPalette()
+    {
+        PaletteColor[] palette = new PaletteColor[PaletteBank.ColorsPerPalette];
+
+        PaletteColor[] ega =
+        {
+            new PaletteColor(0, 0, 0),
+            new PaletteColor(0, 0, 168),
+            new PaletteColor(0, 168, 0),
+            new PaletteColor(0, 168, 168),
+            new PaletteColor(168, 0, 0),
+            new PaletteColor(168, 0, 168),
+            new PaletteColor(168, 84, 0),
+            new PaletteColor(168, 168, 168),
+            new PaletteColor(84, 84, 84),
+            new PaletteColor(84, 84, 252),
+            new PaletteColor(84, 252, 84),
+            new PaletteColor(84, 252, 252),
+            new PaletteColor(252, 84, 84),
+            new PaletteColor(252, 84, 252),
+            new PaletteColor(252, 252, 84),
+            new PaletteColor(252, 252, 252),
+        };
+
+        Array.Copy(ega, 0, palette, 0, ega.Length);
+
+        int[] grayscale = { 0, 20, 32, 44, 56, 68, 80, 96, 112, 128, 144, 160, 180, 200, 224, 252 };
+        for (int i = 0; i < grayscale.Length; i++)
+        {
+            int shade = grayscale[i];
+            palette[16 + i] = new PaletteColor((byte)shade, (byte)shade, (byte)shade);
+        }
+
+        FillColorCycle(palette, 32, new[] { 0, 64, 124, 188, 252 });
+        FillColorCycle(palette, 56, new[] { 124, 156, 188, 220, 252 });
+        FillColorCycle(palette, 80, new[] { 180, 196, 216, 232, 252 });
+        FillColorCycle(palette, 104, new[] { 0, 28, 56, 84, 112 });
+        FillColorCycle(palette, 128, new[] { 56, 68, 84, 96, 112 });
+        FillColorCycle(palette, 152, new[] { 80, 88, 96, 104, 112 });
+        FillColorCycle(palette, 176, new[] { 0, 16, 32, 48, 64 });
+        FillColorCycle(palette, 200, new[] { 32, 40, 48, 56, 64 });
+        FillColorCycle(palette, 224, new[] { 44, 48, 52, 60, 64 });
+
+        for (int i = 248; i < palette.Length; i++)
+        {
+            palette[i] = new PaletteColor(0, 0, 0);
+        }
+
+        return palette;
+    }
+
+    private static void FillColorCycle(PaletteColor[] palette, int startIndex, int[] ramp)
+    {
+        byte low = (byte)ramp[0];
+        byte high = (byte)ramp[ramp.Length - 1];
+        int index = startIndex;
+
+        for (int i = 0; i < ramp.Length; i++)
+        {
+            palette[index++] = new PaletteColor((byte)ramp[i], low, high);
+        }
+
+        for (int i = ramp.Length - 2; i > 0; i--)
+        {
+            palette[index++] = new PaletteColor(high, low, (byte)ramp[i]);
+        }
+
+        for (int i = 0; i < ramp.Length; i++)
+        {
+            palette[index++] = new PaletteColor(high, (byte)ramp[i], low);
+        }
+
+        for (int i = ramp.Length - 2; i > 0; i--)
+        {
+            palette[index++] = new PaletteColor((byte)ramp[i], high, low);
+        }
+
+        for (int i = 0; i < ramp.Length; i++)
+        {
+            palette[index++] = new PaletteColor(low, high, (byte)ramp[i]);
+        }
+
+        for (int i = ramp.Length - 2; i > 0; i--)
+        {
+            palette[index++] = new PaletteColor(low, (byte)ramp[i], high);
+        }
     }
 }

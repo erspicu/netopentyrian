@@ -5,6 +5,10 @@ param(
 )
 
 $solutionPath = Join-Path $PSScriptRoot "OpenTyrianDotNet.sln"
+$nativeProjectPath = Join-Path $PSScriptRoot "native\OpenTyrian.NativeMusic\OpenTyrian.NativeMusic.vcxproj"
+$managedOutputPath = Join-Path $PSScriptRoot ("src\OpenTyrian.WinForms\bin\{0}\net40" -f $Configuration)
+$nativeOutputPath = Join-Path $PSScriptRoot ("native\OpenTyrian.NativeMusic\bin\{0}\Win32" -f $Configuration)
+$seedSaveSourcePath = Join-Path $PSScriptRoot "opentyrian-master\visualc\build\x64\Release\tyrian.sav"
 
 function Resolve-MSBuildPath {
     param(
@@ -51,8 +55,30 @@ function Resolve-MSBuildPath {
 
 $resolvedMSBuildPath = Resolve-MSBuildPath -RequestedPath $MSBuildPath
 
+if (Test-Path $nativeProjectPath) {
+    & $resolvedMSBuildPath $nativeProjectPath /t:Build /p:Configuration=$Configuration /p:Platform=Win32 /m:1 /v:minimal
+
+    if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+    }
+}
+
 & $resolvedMSBuildPath $solutionPath /restore /t:Build /p:Configuration=$Configuration /p:RestoreIgnoreFailedSources=true /m:1 /v:minimal
 
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
+
+if (Test-Path (Join-Path $nativeOutputPath "OpenTyrian.NativeMusic.dll")) {
+    Copy-Item (Join-Path $nativeOutputPath "OpenTyrian.NativeMusic.dll") -Destination (Join-Path $managedOutputPath "OpenTyrian.NativeMusic.dll") -Force
+
+    if (Test-Path (Join-Path $nativeOutputPath "OpenTyrian.NativeMusic.pdb")) {
+        Copy-Item (Join-Path $nativeOutputPath "OpenTyrian.NativeMusic.pdb") -Destination (Join-Path $managedOutputPath "OpenTyrian.NativeMusic.pdb") -Force
+    }
+}
+
+if (Test-Path $seedSaveSourcePath) {
+    Copy-Item $seedSaveSourcePath -Destination (Join-Path $managedOutputPath "tyrian.sav") -Force
+}
+
+

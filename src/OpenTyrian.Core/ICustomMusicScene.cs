@@ -4,5 +4,9 @@ public interface ICustomMusicScene
 {
     string MusicCacheKey { get; }
 
-    AudioCueSample CreateMusicTrack(int sampleRate, int channelCount);
+    int? MusicTrackIndex { get; }
+
+    bool StopMusic { get; }
+
+    AudioCueSample CreateFallbackMusicTrack(int sampleRate, int channelCount);
 }
