@@ -38,27 +38,36 @@ public sealed class LevelSelectScene : IScene
 
         if (hoveredIndex is int pointerIndex)
         {
+            if (_selectedIndex != pointerIndex)
+            {
+                SceneAudio.PlayCursor(resources);
+            }
+
             _selectedIndex = pointerIndex;
         }
 
         if (cancelPressed)
         {
+            SceneAudio.PlayCancel(resources);
             _previousInput = input;
             return new FullGameMenuScene(_sessionState);
         }
 
         if (upPressed)
         {
+            SceneAudio.PlayCursor(resources);
             _selectedIndex = _selectedIndex == 0 ? _sessionState.MainLevelEntries.Count - 1 : _selectedIndex - 1;
         }
 
         if (downPressed)
         {
+            SceneAudio.PlayCursor(resources);
             _selectedIndex = (_selectedIndex + 1) % _sessionState.MainLevelEntries.Count;
         }
 
         if (confirmPressed || (pointerConfirmPressed && hoveredIndex is not null))
         {
+            SceneAudio.PlayConfirm(resources);
             MainLevelEntry selectedEntry = _sessionState.MainLevelEntries[_selectedIndex];
             _sessionState.SetCurrentMainLevel(selectedEntry.MainLevelNumber);
             _previousInput = input;

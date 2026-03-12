@@ -34,27 +34,36 @@ public sealed class EpisodeSelectScene : IScene
 
         if (hoveredIndex is int pointerIndex)
         {
+            if (_menuState.SelectedIndex != pointerIndex)
+            {
+                SceneAudio.PlayCursor(resources);
+            }
+
             _menuState.SetSelectedIndex(pointerIndex);
         }
 
         if (cancelPressed)
         {
+            SceneAudio.PlayCancel(resources);
             _previousInput = input;
             return new MainMenuScene();
         }
 
         if (upPressed)
         {
+            SceneAudio.PlayCursor(resources);
             _menuState.MovePrevious();
         }
 
         if (downPressed)
         {
+            SceneAudio.PlayCursor(resources);
             _menuState.MoveNext();
         }
 
         if ((confirmPressed || (pointerConfirmPressed && hoveredIndex is not null)) && _menuState.SelectedItem.IsEnabled)
         {
+            SceneAudio.PlayConfirm(resources);
             _previousInput = input;
             EpisodeInfo? selectedEpisode = GetSelectedEpisode();
             if (selectedEpisode is not null)

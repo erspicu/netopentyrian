@@ -12,6 +12,7 @@ public sealed class TitleScene : IScene
 
         if (confirmPressed || downPressed || pointerConfirmPressed)
         {
+            SceneAudio.PlayConfirm(resources);
             _previousInput = input;
             return new MainMenuScene();
         }

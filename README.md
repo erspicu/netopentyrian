@@ -63,6 +63,7 @@
 - 已建立 `IAudioDevice` 平台介面並接入 `GameHost`，silent backend 仍保留作 fallback scaffolding
 - WinForms 端預設已切到 `WaveOutAudioDevice`，會直接開啟 WinMM/waveOut backend；目前尚未餵入實際遊戲 PCM，因此仍屬於 backend 建置階段
 - 音效平台層已開始進場，但目前還沒接上真正的 menu/game PCM、混音與 OPL
+- 已建立 scene -> host 的 audio cue 路徑，title / main menu / episode select / full-game hub / shop / data cube / options 等互動現在會送出最小 PCM 提示音
 
 目前專案仍屬於早期移植階段，重點是把資料格式、平台抽象與主流程骨架穩定下來。
 

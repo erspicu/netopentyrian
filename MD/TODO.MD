@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 61%
+總完成度(估算): 約 62%
 
 ## 目標
 
@@ -480,3 +480,5 @@
 - WinForms 端已新增 `SilentAudioDevice`，目前先提供 `.NET Framework 4.0` 下不依賴額外套件的 audio lifecycle 骨架，為後續 waveOut backend 鋪底
 - WinForms 端已新增 `WaveOutAudioDevice`，目前會直接開啟 WinMM/waveOut 裝置並管理 pinned buffer/header lifecycle，正式把第 6 階段推進到真實 backend 層
 - `GameHost` 啟動狀態列現在會反映 audio backend 初始化結果，但尚未接上真正的 menu/game PCM、混音與 OPL
+- 已新增 `AudioCueKind` / `IAudioCueSink` / `AudioCueSynthesizer`，`GameHost` 目前會預先合成最小 PCM cue 並透過 `IAudioDevice.SubmitSamples()` 提交
+- title / main menu / episode select / full-game hub / next-level / ship specs / options / quit confirm / data cube / upgrade shop / session debug 等已可玩的 scene 現在都會對 cursor/confirm/cancel 送出最小提示音

@@ -2,11 +2,12 @@ using OpenTyrian.Platform;
 
 namespace OpenTyrian.Core;
 
-public sealed class GameHost
+public sealed class GameHost : IAudioCueSink
 {
     private readonly IAssetLocator _assetLocator;
     private readonly IInputSource _inputSource;
     private readonly IAudioDevice _audioDevice;
+    private readonly Dictionary<AudioCueKind, AudioCueSample> _audioCues = new();
     private IScene _scene;
     private double _timeSeconds;
     private PaletteBank? _paletteBank;
@@ -85,6 +86,7 @@ public sealed class GameHost
         return new SceneResources
         {
             PaletteCount = PaletteCount,
+            AudioCueSink = this,
             TitleImage = _titleImage,
             TestPcxImage = _testPcxImage,
             TestSpriteSheet = _testSpriteSheet,
@@ -256,11 +258,28 @@ public sealed class GameHost
         _audioDevice.Shutdown();
     }
 
+    public void Enqueue(AudioCueKind cue)
+    {
+        if (!_audioDevice.IsInitialized)
+        {
+            return;
+        }
+
+        AudioCueSample? sample;
+        if (!_audioCues.TryGetValue(cue, out sample) || sample is null)
+        {
+            return;
+        }
+
+        _audioDevice.SubmitSamples(sample.Buffer, sample.FrameCount);
+    }
+
     private void InitializeAudio()
     {
         try
         {
             _audioDevice.Initialize(44100, 2);
+            PrepareAudioCues();
             StatusText = _audioDevice.IsInitialized
                 ? string.Format("{0} | audio:{1}", StatusText, _audioDevice.BackendName)
                 : string.Format("{0} | audio:unavailable", StatusText);
@@ -269,5 +288,18 @@ public sealed class GameHost
         {
             StatusText = string.Format("{0} | audio init failed: {1}", StatusText, ex.Message);
         }
+    }
+
+    private void PrepareAudioCues()
+    {
+        _audioCues.Clear();
+        if (!_audioDevice.IsInitialized)
+        {
+            return;
+        }
+
+        _audioCues[AudioCueKind.Cursor] = AudioCueSynthesizer.Create(AudioCueKind.Cursor, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+        _audioCues[AudioCueKind.Confirm] = AudioCueSynthesizer.Create(AudioCueKind.Confirm, _audioDevice.SampleRate, _audioDevice.ChannelCount);
+        _audioCues[AudioCueKind.Cancel] = AudioCueSynthesizer.Create(AudioCueKind.Cancel, _audioDevice.SampleRate, _audioDevice.ChannelCount);
     }
 }

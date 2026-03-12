@@ -21,6 +21,15 @@ public sealed class ShipSpecsScene : IScene
         bool pointerConfirmPressed = input.PointerConfirm && !_previousInput.PointerConfirm;
         bool pointerCancelPressed = input.PointerCancel && !_previousInput.PointerCancel;
 
+        if (cancelPressed || pointerCancelPressed)
+        {
+            SceneAudio.PlayCancel(resources);
+        }
+        else if (confirmPressed || pointerConfirmPressed)
+        {
+            SceneAudio.PlayConfirm(resources);
+        }
+
         _previousInput = input;
         return cancelPressed || confirmPressed || pointerConfirmPressed || pointerCancelPressed
             ? new FullGameMenuScene(_sessionState)

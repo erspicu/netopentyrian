@@ -32,6 +32,7 @@ public sealed class DataCubeScene : IScene
 
         if (cancelPressed)
         {
+            SceneAudio.PlayCancel(resources);
             _previousInput = input;
             return _returnToFullGameMenu
                 ? new FullGameMenuScene(_sessionState)
@@ -42,6 +43,7 @@ public sealed class DataCubeScene : IScene
         {
             if (leftPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 _selectedEntryIndex = _selectedEntryIndex == 0
                     ? _sessionState.CubeEntries.Count - 1
                     : _selectedEntryIndex - 1;
@@ -50,6 +52,7 @@ public sealed class DataCubeScene : IScene
 
             if (rightPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 _selectedEntryIndex = (_selectedEntryIndex + 1) % _sessionState.CubeEntries.Count;
                 _scrollOffset = 0;
             }
@@ -59,11 +62,13 @@ public sealed class DataCubeScene : IScene
 
             if (upPressed && _scrollOffset > 0)
             {
+                SceneAudio.PlayCursor(resources);
                 _scrollOffset--;
             }
 
             if (downPressed && _scrollOffset < maxScrollOffset)
             {
+                SceneAudio.PlayCursor(resources);
                 _scrollOffset++;
             }
         }

@@ -60,6 +60,11 @@ public sealed class UpgradeMenuScene : IScene
             int? hoveredCategoryRow = HitTestCategoryRow(input.PointerX, input.PointerY, GetCategoryRowCount());
             if (hoveredCategoryRow is int pointerCategoryIndex)
             {
+                if (_selectedCategoryIndex != pointerCategoryIndex)
+                {
+                    SceneAudio.PlayCursor(resources);
+                }
+
                 _selectedCategoryIndex = pointerCategoryIndex;
                 category = GetSelectedCategory();
             }
@@ -69,6 +74,11 @@ public sealed class UpgradeMenuScene : IScene
             int? hoveredSubmenuRow = HitTestSubmenuRow(category, _selectedSlots[_selectedCategoryIndex], input.PointerX, input.PointerY);
             if (hoveredSubmenuRow is int pointerSlot)
             {
+                if (_selectedSlots[_selectedCategoryIndex] != pointerSlot)
+                {
+                    SceneAudio.PlayCursor(resources);
+                }
+
                 _selectedSlots[_selectedCategoryIndex] = pointerSlot;
             }
         }
@@ -77,6 +87,7 @@ public sealed class UpgradeMenuScene : IScene
         {
             if (_mode == UpgradeMenuMode.ItemSelect)
             {
+                SceneAudio.PlayCancel(resources);
                 if (category is not null)
                 {
                     RevertPreparedSelection(category);
@@ -88,6 +99,7 @@ public sealed class UpgradeMenuScene : IScene
                 return null;
             }
 
+            SceneAudio.PlayCancel(resources);
             _previousInput = input;
             return CreateReturnScene();
         }
@@ -102,6 +114,7 @@ public sealed class UpgradeMenuScene : IScene
         {
             if (upPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 _selectedCategoryIndex = _selectedCategoryIndex == 0
                     ? GetCategoryRowCount() - 1
                     : _selectedCategoryIndex - 1;
@@ -110,6 +123,7 @@ public sealed class UpgradeMenuScene : IScene
 
             if (downPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 _selectedCategoryIndex = (_selectedCategoryIndex + 1) % GetCategoryRowCount();
                 category = GetSelectedCategory();
             }
@@ -120,6 +134,7 @@ public sealed class UpgradeMenuScene : IScene
 
             if (upPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 _selectedSlots[_selectedCategoryIndex] = _selectedSlots[_selectedCategoryIndex] == 0
                     ? selectableCount - 1
                     : _selectedSlots[_selectedCategoryIndex] - 1;
@@ -127,16 +142,19 @@ public sealed class UpgradeMenuScene : IScene
 
             if (downPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 _selectedSlots[_selectedCategoryIndex] = (_selectedSlots[_selectedCategoryIndex] + 1) % selectableCount;
             }
 
             if (leftPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 TryAdjustSelectedWeaponPower(category, -1, resources.ItemCatalog);
             }
 
             if (rightPressed)
             {
+                SceneAudio.PlayCursor(resources);
                 TryAdjustSelectedWeaponPower(category, 1, resources.ItemCatalog);
             }
         }
@@ -147,10 +165,12 @@ public sealed class UpgradeMenuScene : IScene
             {
                 if (category is null)
                 {
+                    SceneAudio.PlayConfirm(resources);
                     _previousInput = input;
-                    return new EpisodeSessionScene(_sessionState);
+                    return CreateReturnScene();
                 }
 
+                SceneAudio.PlayConfirm(resources);
                 SyncSelectedSlotToPrepared(category);
                 _mode = UpgradeMenuMode.ItemSelect;
                 _statusText = $"{category.DisplayName} submenu opened";
@@ -159,6 +179,7 @@ public sealed class UpgradeMenuScene : IScene
             {
                 if (CommitPreparedSelection(category, resources.ItemCatalog))
                 {
+                    SceneAudio.PlayConfirm(resources);
                     _mode = UpgradeMenuMode.CategorySelect;
                 }
             }
@@ -166,6 +187,7 @@ public sealed class UpgradeMenuScene : IScene
             {
                 if (category is not null)
                 {
+                    SceneAudio.PlayConfirm(resources);
                     int itemId = category.ItemCount > 0 ? category.ItemIds[_selectedSlots[_selectedCategoryIndex]] : 0;
                     _preparedItemIds[_selectedCategoryIndex] = itemId;
                     if (ItemPriceCalculator.IsWeaponCategory(category.Kind))
@@ -202,10 +224,12 @@ public sealed class UpgradeMenuScene : IScene
                     category = GetSelectedCategory();
                     if (category is null)
                     {
+                        SceneAudio.PlayConfirm(resources);
                         _previousInput = input;
                         return CreateReturnScene();
                     }
 
+                    SceneAudio.PlayConfirm(resources);
                     SyncSelectedSlotToPrepared(category);
                     _mode = UpgradeMenuMode.ItemSelect;
                     _statusText = $"{category.DisplayName} submenu opened";
@@ -221,11 +245,13 @@ public sealed class UpgradeMenuScene : IScene
                     {
                         if (CommitPreparedSelection(category, resources.ItemCatalog))
                         {
+                            SceneAudio.PlayConfirm(resources);
                             _mode = UpgradeMenuMode.CategorySelect;
                         }
                     }
                     else
                     {
+                        SceneAudio.PlayConfirm(resources);
                         int itemId = category.ItemIds[pointerSlot];
                         _preparedItemIds[_selectedCategoryIndex] = itemId;
                         if (ItemPriceCalculator.IsWeaponCategory(category.Kind))

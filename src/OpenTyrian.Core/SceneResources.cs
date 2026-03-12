@@ -4,6 +4,8 @@ public sealed class SceneResources
 {
     public required int PaletteCount { get; init; }
 
+    public IAudioCueSink? AudioCueSink { get; init; }
+
     public PicImage? TitleImage { get; init; }
 
     public PcxImage? TestPcxImage { get; init; }

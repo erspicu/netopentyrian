@@ -28,24 +28,28 @@ public sealed class EpisodeSessionScene : IScene
 
         if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
         {
+            SceneAudio.PlayConfirm(resources);
             _previousInput = input;
             return new UpgradeMenuScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
         }
 
         if (upPressed && _sessionState.CubeEntries.Count > 0)
         {
+            SceneAudio.PlayConfirm(resources);
             _previousInput = input;
             return new DataCubeScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
         }
 
         if (downPressed && _sessionState.ShopCategories.Count > 0)
         {
+            SceneAudio.PlayConfirm(resources);
             _previousInput = input;
             return new UpgradeMenuScene(_sessionState, returnToFullGameMenu: _returnToFullGameMenu);
         }
 
         if (confirmPressed)
         {
+            SceneAudio.PlayConfirm(resources);
             _lastExecutionResult = EpisodeCommandInterpreter.ExecuteCurrentSection(_sessionState);
             if (_lastExecutionResult.ShopRequested && _sessionState.ShopCategories.Count > 0)
             {
@@ -58,6 +62,7 @@ public sealed class EpisodeSessionScene : IScene
 
         if (cancelPressed)
         {
+            SceneAudio.PlayCancel(resources);
             return _returnToFullGameMenu
                 ? new FullGameMenuScene(_sessionState)
                 : new EpisodeSelectScene(_sessionState.StartMode);

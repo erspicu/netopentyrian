@@ -33,27 +33,44 @@ public sealed class QuitConfirmationScene : IScene
 
         if (hoveredIndex is int pointerIndex)
         {
+            if (_menuState.SelectedIndex != pointerIndex)
+            {
+                SceneAudio.PlayCursor(resources);
+            }
+
             _menuState.SetSelectedIndex(pointerIndex);
         }
 
         if (cancelPressed)
         {
+            SceneAudio.PlayCancel(resources);
             _previousInput = input;
             return new FullGameMenuScene(_sessionState);
         }
 
         if (leftPressed)
         {
+            SceneAudio.PlayCursor(resources);
             _menuState.MovePrevious();
         }
 
         if (rightPressed)
         {
+            SceneAudio.PlayCursor(resources);
             _menuState.MoveNext();
         }
 
         if (confirmPressed || (pointerConfirmPressed && hoveredIndex is not null))
         {
+            if (_menuState.SelectedItem.Id == "yes")
+            {
+                SceneAudio.PlayConfirm(resources);
+            }
+            else
+            {
+                SceneAudio.PlayCancel(resources);
+            }
+
             _previousInput = input;
             return _menuState.SelectedItem.Id == "yes"
                 ? new EpisodeSelectScene(_sessionState.StartMode)
