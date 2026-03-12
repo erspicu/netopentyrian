@@ -71,7 +71,7 @@ public sealed class EpisodeSessionState
 
     public bool JumpBackToEpisode1 { get; }
 
-    public bool GameHasRepeated { get; }
+    public bool GameHasRepeated { get; private set; }
 
     public int LevelCount { get; }
 
@@ -105,7 +105,7 @@ public sealed class EpisodeSessionState
 
     public IList<CubeTextEntry> CubeEntries { get; }
 
-    public int PlayerCount { get; }
+    public int PlayerCount { get; private set; }
 
     public bool IsArcadeLikeMode { get; private set; }
 
@@ -267,6 +267,53 @@ public sealed class EpisodeSessionState
         }
 
         AutoExecutedMainLevelNumber = CurrentLevelNumber;
+    }
+
+    public void ApplySaveSlotRecord(SaveSlotRecord slot, int playerCount)
+    {
+        CurrentEpisodeNumber = StartInfo.EpisodeNumber;
+        GameHasRepeated = slot.GameHasRepeated;
+        PlayerCount = Math.Max(1, playerCount);
+        IsArcadeLikeMode = false;
+        Cash = Math.Max(0, slot.Cash);
+        SaveLevel = Math.Max(1, (int)slot.LevelNumber);
+        LastLevelSaveRequested = false;
+        AutoExecutedMainLevelNumber = 0;
+
+        SetCurrentMainLevel(SaveLevel);
+
+        PlayerLoadout.Equip(ItemCategoryKind.FrontWeapon, slot.Items.Length > 0 ? slot.Items[0] : 0);
+        PlayerLoadout.Equip(ItemCategoryKind.RearWeapon, slot.Items.Length > 1 ? slot.Items[1] : 0);
+        PlayerLoadout.Equip(ItemCategoryKind.SidekickLeft, slot.Items.Length > 3 ? slot.Items[3] : 0);
+        PlayerLoadout.Equip(ItemCategoryKind.SidekickRight, slot.Items.Length > 4 ? slot.Items[4] : 0);
+        PlayerLoadout.Equip(ItemCategoryKind.Generator, slot.Items.Length > 5 ? slot.Items[5] : 0);
+        PlayerLoadout.Equip(ItemCategoryKind.Shield, slot.Items.Length > 9 ? slot.Items[9] : 0);
+        PlayerLoadout.Equip(ItemCategoryKind.Ship, slot.Items.Length > 11 ? slot.Items[11] : 0);
+        PlayerLoadout.SetWeaponPower(ItemCategoryKind.FrontWeapon, slot.WeaponPowers.Length > 0 ? slot.WeaponPowers[0] : 0);
+        PlayerLoadout.SetWeaponPower(ItemCategoryKind.RearWeapon, slot.WeaponPowers.Length > 1 ? slot.WeaponPowers[1] : 0);
+    }
+
+    public void WriteToSaveSlotRecord(SaveSlotRecord slot, string slotName)
+    {
+        slot.LevelNumber = (ushort)Math.Max(1, SaveLevel);
+        slot.Cash = Cash;
+        slot.Cash2 = PlayerCount > 1 ? Cash : 0;
+        slot.LevelName = CurrentMainLevelEntry?.Section.Label ?? string.Format("Level {0}", SaveLevel);
+        slot.Name = string.IsNullOrWhiteSpace(slotName)
+            ? string.Format("EP{0}-LV{1}", CurrentEpisodeNumber, SaveLevel)
+            : slotName;
+        slot.EpisodeNumber = (byte)Math.Max(1, CurrentEpisodeNumber);
+        slot.GameHasRepeated = GameHasRepeated;
+        slot.Items[0] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.FrontWeapon);
+        slot.Items[1] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.RearWeapon);
+        slot.Items[3] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.SidekickLeft);
+        slot.Items[4] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.SidekickRight);
+        slot.Items[5] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.Generator);
+        slot.Items[8] = (byte)Math.Max(1, InitialEpisodeNumber);
+        slot.Items[9] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.Shield);
+        slot.Items[11] = (byte)PlayerLoadout.GetEquippedItemId(ItemCategoryKind.Ship);
+        slot.WeaponPowers[0] = (byte)PlayerLoadout.GetWeaponPower(ItemCategoryKind.FrontWeapon);
+        slot.WeaponPowers[1] = (byte)PlayerLoadout.GetWeaponPower(ItemCategoryKind.RearWeapon);
     }
 
     private void SeedLoadoutFromAvailability()

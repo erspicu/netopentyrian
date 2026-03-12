@@ -23,4 +23,16 @@ public sealed class FileSystemUserFileStore : IUserFileStore
     {
         return File.OpenRead(GetFullPath(relativePath));
     }
+
+    public Stream OpenWrite(string relativePath)
+    {
+        string path = GetFullPath(relativePath);
+        string? directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        return File.Open(path, FileMode.Create, FileAccess.Write, FileShare.None);
+    }
 }

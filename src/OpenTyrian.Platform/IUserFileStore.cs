@@ -9,4 +9,6 @@ public interface IUserFileStore
     string GetFullPath(string relativePath);
 
     Stream OpenRead(string relativePath);
+
+    Stream OpenWrite(string relativePath);
 }

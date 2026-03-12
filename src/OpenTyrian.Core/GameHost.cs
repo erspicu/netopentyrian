@@ -94,6 +94,8 @@ public sealed class GameHost : IAudioCueSink
             SaveSlots = _saveSlots,
             InputConfigurator = _inputSource as OpenTyrian.Platform.IInputConfigurator,
             JoystickConfigurator = _inputSource as OpenTyrian.Platform.IJoystickConfigurator,
+            UserFileStore = _userFileStore,
+            SaveCatalogUpdater = UpdateSaveCatalog,
             TitleImage = _titleImage,
             TestPcxImage = _testPcxImage,
             TestSpriteSheet = _testSpriteSheet,
@@ -264,12 +266,17 @@ public sealed class GameHost : IAudioCueSink
     {
         try
         {
-            _saveSlots = SaveSlotCatalogLoader.Load(_userFileStore);
+            _saveSlots = SaveGameFileManager.Load(_userFileStore).ToCatalog();
         }
         catch
         {
             _saveSlots = null;
         }
+    }
+
+    private void UpdateSaveCatalog(SaveSlotCatalog catalog)
+    {
+        _saveSlots = catalog;
     }
 
     public void Shutdown()

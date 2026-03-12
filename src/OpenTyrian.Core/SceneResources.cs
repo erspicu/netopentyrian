@@ -12,6 +12,10 @@ public sealed class SceneResources
 
     public OpenTyrian.Platform.IJoystickConfigurator? JoystickConfigurator { get; init; }
 
+    public OpenTyrian.Platform.IUserFileStore? UserFileStore { get; init; }
+
+    public Action<SaveSlotCatalog>? SaveCatalogUpdater { get; init; }
+
     public PicImage? TitleImage { get; init; }
 
     public PcxImage? TestPcxImage { get; init; }

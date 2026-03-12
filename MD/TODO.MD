@@ -2,7 +2,7 @@
 
 最後更新: 2026-03-12
 目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7 階段進行中
-總完成度(估算): 約 68%
+總完成度(估算): 約 72%
 
 ## 目標
 
@@ -491,3 +491,6 @@
 - WinForms 端已新增 `HybridJoystickDevice`，目前會同時輪詢 `XInput + DirectInput`，並在 `WinFormsInputSource` 內整合成單一 `InputSnapshot`
 - 手把預設綁定目前採 `Any device + direction/button1/button2`，rebind 時會記錄實際觸發的 device id，後續可直接對齊 `tool/aprnes.ini` 那種 `joypad_X=1000,Button 1,1` 格式
 - 手把 ini 持久化已列為後置項目；會等主流程移植更完整後，再把目前的 in-memory 綁定改成讀寫設定檔
+- 已新增 `SaveGameFileManager` / `SaveGameFile` / `SaveSlotRecord`，目前會保留 `tyrian.sav` 的原始加密與 checksum 格式，並支援 22 個 slot 的 decode + encode + writeback
+- `IUserFileStore` 已擴充 `OpenWrite()`，`SaveSlotsScene` 不再只是 read-only browser；`Load Game` 會依 slot 內容重建 episode session，`Save Game` 會把目前 session 寫回選定 slot
+- `EpisodeSessionState` 已新增 save slot apply/write helper，現在至少會把 episode / level / cash / ship/front/rear/shield/generator/sidekick / weapon power 這些核心狀態和 `tyrian.sav` 對齊

@@ -64,8 +64,8 @@
 - WinForms 端預設已切到 `WaveOutAudioDevice`，會直接開啟 WinMM/waveOut backend；目前尚未餵入實際遊戲 PCM，因此仍屬於 backend 建置階段
 - 音效平台層已開始進場，但目前還沒接上真正的 menu/game PCM、混音與 OPL
 - 已建立 scene -> host 的 audio cue 路徑，title / main menu / episode select / full-game hub / shop / data cube / options 等互動現在會送出最小 PCM 提示音
-- 已新增 `IUserFileStore` 與 `tyrian.sav` 解碼路徑，`Options` 底下的 `Load Game / Save Game` 現在可進入 read-only slot browser
-- load/save scene 目前只會瀏覽與顯示 slot metadata，不會真的載入或寫回存檔
+- 已新增 `IUserFileStore` 與 `tyrian.sav` 讀寫路徑，`Options` 底下的 `Load Game / Save Game` 現在會真的讀出 slot 並可寫回目前 session
+- `SaveGameFileManager` 會保留原始 `tyrian.sav` 加密/checksum 格式，`Load Game` 目前可把 slot 的 episode/level/cash/loadout 套回 session，`Save Game` 會把目前 session 寫回 slot
 - `Options -> Keyboard Setup` 現在可進入，會顯示目前六個核心按鍵綁定並支援最小 rebind / reset defaults
 - `Options -> Joystick Setup` 現在可進入，WinForms 輸入層已改成輪詢 `XInput + DirectInput`，並可對六個核心按鍵做最小手把重綁
 - 手把綁定目前先保存在執行期間記憶體內；之後會再依 `tool/aprnes.ini` 類似的 key/value 格式補上 ini 讀寫

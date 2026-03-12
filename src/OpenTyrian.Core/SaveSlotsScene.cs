@@ -79,7 +79,7 @@ public sealed class SaveSlotsScene : IScene
         {
             SceneAudio.PlayConfirm(resources);
             _previousInput = input;
-            return new OptionsScene(_sessionState);
+            return ExecuteSelectedSlot(resources, pageSlotCount);
         }
 
         _previousInput = input;
@@ -126,7 +126,7 @@ public sealed class SaveSlotsScene : IScene
 
         SaveSlotInfo selectedSlot = pageSlots[_selectedIndex];
         resources.FontRenderer.DrawText(surface, 160, 194, BuildDetailLine(selectedSlot), FontKind.Tiny, FontAlignment.Center, 12, 0, shadow: true);
-        resources.FontRenderer.DrawDark(surface, 160, 204, "Left/Right page  Up/Down choose  Enter returns  Esc back", FontKind.Tiny, FontAlignment.Center, black: false);
+        resources.FontRenderer.DrawDark(surface, 160, 204, BuildFooterText(), FontKind.Tiny, FontAlignment.Center, black: false);
     }
 
     private IList<SaveSlotInfo> GetPageSlots(int pageIndex)
@@ -171,5 +171,99 @@ public sealed class SaveSlotsScene : IScene
         return slot.IsEmpty
             ? string.Format("slot {0}: empty", slot.SlotIndex)
             : string.Format("slot {0}: level {1}  cubes:{2}  cash:{3}/{4}", slot.SlotIndex, slot.LevelNumber, slot.CubeCount, slot.Cash, slot.Cash2);
+    }
+
+    private IScene? ExecuteSelectedSlot(SceneResources resources, int pageSlotCount)
+    {
+        IList<SaveSlotInfo> pageSlots = GetPageSlots(_pageIndex);
+        if (pageSlotCount <= 0 || _selectedIndex < 0 || _selectedIndex >= pageSlots.Count)
+        {
+            return null;
+        }
+
+        SaveSlotInfo selectedSlot = pageSlots[_selectedIndex];
+        return _mode == SaveBrowserMode.Load
+            ? ExecuteLoad(resources, selectedSlot)
+            : ExecuteSave(resources, selectedSlot);
+    }
+
+    private IScene? ExecuteLoad(SceneResources resources, SaveSlotInfo selectedSlot)
+    {
+        if (selectedSlot.IsEmpty || resources.UserFileStore is null)
+        {
+            return null;
+        }
+
+        SaveGameFile saveFile = SaveGameFileManager.Load(resources.UserFileStore);
+        if (selectedSlot.SlotIndex < 1 || selectedSlot.SlotIndex > saveFile.Slots.Count)
+        {
+            return null;
+        }
+
+        SaveSlotRecord slot = saveFile.Slots[selectedSlot.SlotIndex - 1];
+        EpisodeInfo? episode = ResolveEpisode(resources.Episodes, slot);
+        if (episode is null)
+        {
+            return null;
+        }
+
+        EpisodeSessionState loadedSession = new EpisodeSessionState(episode.StartInfo, GameStartMode.FullGame);
+        loadedSession.ApplySaveSlotRecord(slot, selectedSlot.SlotIndex > 11 ? 2 : 1);
+        return new FullGameMenuScene(loadedSession);
+    }
+
+    private IScene? ExecuteSave(SceneResources resources, SaveSlotInfo selectedSlot)
+    {
+        if (resources.UserFileStore is null)
+        {
+            return null;
+        }
+
+        SaveGameFile saveFile = SaveGameFileManager.Load(resources.UserFileStore);
+        if (selectedSlot.SlotIndex < 1 || selectedSlot.SlotIndex > saveFile.Slots.Count)
+        {
+            return null;
+        }
+
+        SaveSlotRecord slot = saveFile.Slots[selectedSlot.SlotIndex - 1];
+        string slotName = !slot.IsEmpty && !string.IsNullOrWhiteSpace(slot.Name)
+            ? slot.Name
+            : string.Format("EP{0}-LV{1}", _sessionState.CurrentEpisodeNumber, _sessionState.SaveLevel);
+        _sessionState.WriteToSaveSlotRecord(slot, slotName);
+        SaveGameFileManager.Save(resources.UserFileStore, saveFile);
+
+        SaveSlotCatalog updatedCatalog = saveFile.ToCatalog();
+        if (resources.SaveCatalogUpdater is not null)
+        {
+            resources.SaveCatalogUpdater(updatedCatalog);
+        }
+
+        return new OptionsScene(_sessionState);
+    }
+
+    private static EpisodeInfo? ResolveEpisode(IList<EpisodeInfo> episodes, SaveSlotRecord slot)
+    {
+        int episodeNumber = slot.EpisodeNumber;
+        if (string.Equals(slot.LevelName, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            episodeNumber = episodeNumber >= 4 ? 1 : episodeNumber + 1;
+        }
+
+        for (int i = 0; i < episodes.Count; i++)
+        {
+            if (episodes[i].EpisodeNumber == episodeNumber)
+            {
+                return episodes[i];
+            }
+        }
+
+        return episodes.Count > 0 ? episodes[0] : null;
+    }
+
+    private string BuildFooterText()
+    {
+        return _mode == SaveBrowserMode.Load
+            ? "Left/Right page  Up/Down choose  Enter loads  Esc back"
+            : "Left/Right page  Up/Down choose  Enter saves  Esc back";
     }
 }
