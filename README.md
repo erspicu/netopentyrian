@@ -55,7 +55,7 @@
 - full-game hub 可進入 data cube、upgrade shop、next-level 選單與 session debug view，並支援滑鼠 hover/click
 - `tyrian.hdt` 已額外接入 full-game menu 的 `menuInt[1]` 文字，減少這一段流程的硬編碼
 - 已新增最小 `LevelSelectScene`，可瀏覽 parsed main-level section 並選擇/啟動目前 level
-- 已新增 `GameplayScene` 垂直切片；`Next Level` 現在會真的進入最小 playable mission，支援移動、射擊、敵人生成、碰撞、過關獎勵與 level/save 進度更新
+- 已新增 `GameplayScene` 垂直切片；`Next Level` 現在會真的進入最小 playable mission，支援移動、前/後武器與 sidekick 射擊、敵人生成/敵彈、護盾/裝甲 HUD、pause menu、過關獎勵與 level/save 進度更新
 - full-game hub 的 `Ship Specs` 已啟用，會顯示目前 ship / shield / generator / weapon / sidekick 摘要
 - `tyrian.hdt` 已開始額外載入 ship info 兩段文字，`ShipSpecsScene` 會優先顯示真實 ship 說明
 - `ItemCatalog` 已擴充 ship / shield / generator / weapon 的基礎 stat metadata，供 ship specs 與後續 UI 顯示使用

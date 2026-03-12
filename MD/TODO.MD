@@ -1,8 +1,8 @@
 # OpenTyrian C#/.NET Framework 4.0 移植 TODO
 
 最後更新: 2026-03-12
-目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7、8 階段進行中
-總完成度(估算): 約 85%
+目前狀態: 第 0、1 階段完成，第 2、3、4、5、6、7、8 階段進行中，第 9、10 階段未開始
+總完成度(估算): 約 95%
 
 ## 目標
 
@@ -281,7 +281,7 @@
 - 敵人與碰撞正常
 - 可進出選單與遊戲流程
 
-狀態: 未開始
+狀態: 進行中
 
 ### 第 9 階段: 音樂與進階功能
 
@@ -498,3 +498,6 @@
 - `SaveSlotsScene` 的 `Save Game` 現在會先進入名稱編輯狀態，可編輯 14 字元 ASCII slot name、用 Backspace 刪除、Enter 寫回 `tyrian.sav`
 - 已新增 `GameplayScene` 最小可玩切片；`Next Level` 不再只是在 hub 內切當前 section，而是會實際進入 mission 畫面
 - `GameplayScene` 目前已具備玩家移動、持續射擊、敵人生成、命中/碰撞、失敗/過關 overlay，以及 cash reward / next-level / save-level 回寫流程
+- `GameplayScene` 現在已補上 pause menu，`Esc` 不再直接中斷回 hub，而是可在關卡內 `Resume / Retry Level / Return to Menu`
+- `GameplayScene` 的裝備影響已往戰鬥內核延伸：ship 影響移動/裝甲，shield + generator 影響護盾容量與回復，rear weapon / sidekick 會實際生成額外 fire pattern
+- 敵人現在會發射 projectile；關卡 HUD 已加入 armor/shield bar，cash reward 會先累積於 mission 內，直到過關才真正寫回 session，避免 retry/abort 汙染進度
